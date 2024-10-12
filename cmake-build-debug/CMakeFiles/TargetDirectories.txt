@@ -1,3 +1,0 @@
-D:/PWR/mgr/algorytmy_optymalizacji/projekt/zadanie/TSP/cmake-build-debug/CMakeFiles/TSP.dir
-D:/PWR/mgr/algorytmy_optymalizacji/projekt/zadanie/TSP/cmake-build-debug/CMakeFiles/edit_cache.dir
-D:/PWR/mgr/algorytmy_optymalizacji/projekt/zadanie/TSP/cmake-build-debug/CMakeFiles/rebuild_cache.dir
