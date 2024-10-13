@@ -17,6 +17,7 @@ void Loader::load(const char *filename) {
 			std::istringstream iss(matches[0]);
 			Location loc {};
 			iss >> loc.n >> loc.x >> loc.y;
+			locations.push_back(loc);
 		}
 	}
 }
