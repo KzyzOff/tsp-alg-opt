@@ -4,6 +4,7 @@
 #include <regex>
 
 #include "utils.hpp"
+#include "constants.hpp"
 
 void Loader::load(const char *filename) {
 	const std::string path = std::string(DATASETS_PATH).append(filename);

@@ -16,6 +16,7 @@ set(
 set(
     HEADERS
         ${HEADERS_DIR}/utils.hpp
+        ${HEADERS_DIR}/constants.hpp
         ${HEADERS_DIR}/Graph.hpp
         ${HEADERS_DIR}/Greedy.hpp
         ${HEADERS_DIR}/Loader.hpp

@@ -5,8 +5,6 @@
 
 #include "Graph.hpp"
 
-#define DATASETS_PATH "./datasets/"
-
 struct Location {
 	int n;
 	float x, y;
