@@ -23,6 +23,8 @@ void CSVLogger::commit_row() {
 	}
 	full_row << '\n';
 	file << full_row.str();
+	row.clear();
+	row.resize(n_columns, "");
 }
 
 void CSVLogger::add(int col, const std::string& content) {
