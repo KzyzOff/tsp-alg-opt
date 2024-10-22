@@ -20,7 +20,6 @@ enum class MutationType {
 	SWAP
 };
 
-// TODO: Select random device and create random generator in constructor of this class
 class PopulationManager {
 public:
 	PopulationManager(unsigned int pop_size, unsigned int gen_count, float cross_prob, float mut_prob,
@@ -33,7 +32,9 @@ public:
 	void advance_population();
 	std::vector<std::shared_ptr<Individual>> tournament_selector();
 	std::pair<Individual, Individual> ordered_crossover(const Individual& parent1, const Individual& parent2);
+	// Add new offspring to the population and then remove the worst ones
 	void add_reduce(std::vector<std::shared_ptr<Individual>>);
+	// Replace worst individuals from the previous generation
 	void replace_worst(std::vector<std::shared_ptr<Individual>>);
 	void mutate_population(MutationType mt);
 
@@ -48,8 +49,8 @@ private:
 	std::vector<std::shared_ptr<Individual>> population;
 	size_t chromosome_size;
 
-	// std::random_device rand_dev;
-	// std::mt19937 rand_gen;
+	std::random_device rand_dev;
+	std::mt19937 rand_gen;
 
 	void mutate_inverse(Individual& individual);
 	void mutate_swap(Individual& individual);

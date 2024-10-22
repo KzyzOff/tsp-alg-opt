@@ -15,7 +15,8 @@ PopulationManager::PopulationManager(unsigned int pop_size, unsigned int gen_cou
 	  cross_prob(cross_prob),
 	  mut_prob(mut_prob),
 	  locations(locations),
-	  chromosome_size(locations->size()) {
+	  chromosome_size(locations->size()),
+	  rand_gen(rand_dev()) {
 	generate_random_pop();
 	update_pop_fitness();
 }
@@ -63,8 +64,6 @@ FitnessStats PopulationManager::calc_fitness_stats() {
 }
 
 void PopulationManager::generate_random_pop() {
-	std::random_device rd;
-	std::mt19937 generator(rd());
 	population.clear();
 	population.resize(population_size);
 	for ( size_t i = 0; i < population_size; ++i ) {
@@ -74,13 +73,12 @@ void PopulationManager::generate_random_pop() {
 		for ( int x = 0; x < locations->size(); ++x ) {
 			population.at(i)->chromosome.at(x) = locations->at(x).n;
 		}
-		std::shuffle(population.at(i)->chromosome.begin(), population.at(i)->chromosome.end(), generator);
+		std::shuffle(population.at(i)->chromosome.begin(), population.at(i)->chromosome.end(), rand_gen);
 	}
 }
 
 void PopulationManager::advance_population() {
 	auto selected = tournament_selector();
-	// auto children = ordered_crossover(*selected.at(1), *selected.at(2));
 	std::vector<std::shared_ptr<Individual>> children;
 	children.reserve(selected.size() / 2);
 	// Skips the last one if selected parents count from the population is odd
@@ -99,13 +97,9 @@ void PopulationManager::advance_population() {
 
 std::vector<std::shared_ptr<Individual> >
 PopulationManager::tournament_selector() {
-	std::random_device rd;
-	std::mt19937 generator(rd());
-	std::uniform_int_distribution<int> distribution(0, population_size - 1);
-
 	std::vector<std::shared_ptr<Individual> > result;
 	std::vector<std::shared_ptr<Individual> > shuffle_lookup(population.begin(), population.end());
-	std::ranges::shuffle(shuffle_lookup, generator);
+	std::ranges::shuffle(shuffle_lookup, rand_gen);
 	int selected_count = cross_prob * static_cast<float>(population_size);
 	result.reserve(selected_count);
 
@@ -117,7 +111,7 @@ PopulationManager::tournament_selector() {
 		shuffle_lookup.erase(best);
 		update_fitness(**best);
 		result.push_back(std::move(std::make_shared<Individual>(**best)));
-		std::ranges::shuffle(shuffle_lookup, generator);
+		std::ranges::shuffle(shuffle_lookup, rand_gen);
 	}
 
 	return result;
@@ -125,13 +119,11 @@ PopulationManager::tournament_selector() {
 
 std::pair<Individual, Individual>
 PopulationManager::ordered_crossover(const Individual& parent1, const Individual& parent2) {
-	std::random_device rd;
-	std::mt19937 generator(rd());
 	std::uniform_int_distribution<int> distribution(0, chromosome_size - 1);
-	int cut_start = distribution(generator);
-	int cut_end = distribution(generator);
+	int cut_start = distribution(rand_gen);
+	int cut_end = distribution(rand_gen);
 	while ( cut_start == cut_end )
-		cut_end = distribution(generator);
+		cut_end = distribution(rand_gen);
 	if ( cut_start > cut_end )
 		std::swap(cut_start, cut_end);
 
@@ -160,11 +152,6 @@ PopulationManager::ordered_crossover(const Individual& parent1, const Individual
 }
 
 void PopulationManager::mutate_population(MutationType mt) {
-	// 1. Select individuals for mutation
-	// 2. Mutate them based on MutationType
-	std::random_device rd;
-	std::mt19937 gen(rd());
-
 	switch ( mt ) {
 		case MutationType::INVERSE: {
 			std::set<std::shared_ptr<Individual>> selected_individuals;
@@ -172,7 +159,7 @@ void PopulationManager::mutate_population(MutationType mt) {
 			std::uniform_int_distribution<> distribution(0, population_size - 1);
 
 			while ( selected_individuals.size() < count ) {
-				int index = distribution(gen);
+				int index = distribution(rand_gen);
 				selected_individuals.insert(population.at(index));
 			}
 
@@ -190,7 +177,7 @@ void PopulationManager::mutate_population(MutationType mt) {
 				idx.at(i) = i;
 			}
 
-			std::ranges::shuffle(idx, gen);
+			std::ranges::shuffle(idx, rand_gen);
 			for ( int i = 0; i < mut_prob * population_size; ++i ) {
 				mutate_swap(*population.at(i));
 			}
@@ -201,13 +188,11 @@ void PopulationManager::mutate_population(MutationType mt) {
 }
 
 void PopulationManager::mutate_inverse(Individual &individual) {
-	std::random_device rd;
-	std::mt19937 generator(rd());
 	std::uniform_int_distribution<> distribution(0, chromosome_size - 1);
-	int start = distribution(generator);
-	int end = distribution(generator);
+	int start = distribution(rand_gen);
+	int end = distribution(rand_gen);
 	while ( start == end )
-		end = distribution(generator);
+		end = distribution(rand_gen);
 	if ( start > end )
 		std::swap(start, end);
 
@@ -219,13 +204,11 @@ void PopulationManager::mutate_inverse(Individual &individual) {
 }
 
 void PopulationManager::mutate_swap(Individual &individual) {
-	std::random_device rd;
-	std::mt19937 generator(rd());
 	std::uniform_int_distribution<> distribution(0, chromosome_size - 1);
-	int first = distribution(generator);
-	int second = distribution(generator);
+	int first = distribution(rand_gen);
+	int second = distribution(rand_gen);
 	while ( first == second )
-		second = distribution(generator);
+		second = distribution(rand_gen);
 
 	std::swap(individual.chromosome.at(first), individual.chromosome.at(second));
 }
