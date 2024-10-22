@@ -6,6 +6,10 @@
 #include "utils.hpp"
 #include "constants.hpp"
 
+Loader::Loader(const std::string &filename) {
+	load(filename.c_str());
+}
+
 void Loader::load(const char *filename) {
 	const std::string path = std::string(DATASETS_PATH).append(filename);
 
