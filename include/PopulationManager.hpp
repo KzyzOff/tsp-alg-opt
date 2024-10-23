@@ -31,7 +31,8 @@ public:
 
 	void advance_population();
 	std::vector<std::shared_ptr<Individual>> tournament_selector();
-	std::pair<Individual, Individual> ordered_crossover(const Individual& parent1, const Individual& parent2);
+	std::pair<Individual, Individual> ox_crossover(const Individual& parent1, const Individual& parent2);
+	std::pair<Individual, Individual> pmx_crossover(const Individual& parent1, const Individual& parent2);
 	// Add new offspring to the population and then remove the worst ones
 	void add_reduce(std::vector<std::shared_ptr<Individual>>);
 	// Replace worst individuals from the previous generation
@@ -51,6 +52,8 @@ private:
 
 	std::random_device rand_dev;
 	std::mt19937 rand_gen;
+
+	void map_remaining_pmx(const Individual& parent1, const Individual& parent2, Individual& offspring, const int cut_start, const int cut_end);
 
 	void mutate_inverse(Individual& individual);
 	void mutate_swap(Individual& individual);

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <map>
 #include <random>
 #include <utility>
 #include <set>
@@ -28,7 +29,7 @@ void PopulationManager::update_pop_fitness() {
 	}
 }
 
-void PopulationManager::update_fitness(Individual& individual) {
+void PopulationManager::update_fitness(Individual &individual) {
 	for ( size_t i = 0; i < chromosome_size; ++i ) {
 		if ( i == chromosome_size - 1 ) {
 			individual.fitness += calc_distance(locations->at(individual.chromosome.at(i) - 1).x,
@@ -79,16 +80,17 @@ void PopulationManager::generate_random_pop() {
 
 void PopulationManager::advance_population() {
 	auto selected = tournament_selector();
-	std::vector<std::shared_ptr<Individual>> children;
+	std::vector<std::shared_ptr<Individual> > children;
 	children.reserve(selected.size() / 2);
 	// Skips the last one if selected parents count from the population is odd
 	for ( int i = 1; i < selected.size(); ++i ) {
-		auto crossed_result = ordered_crossover(*(selected.at(i - 1)), *(selected.at(i)));
+		// auto crossed_result = ox_crossover(*(selected.at(i - 1)), *(selected.at(i)));
+		auto crossed_result = pmx_crossover(*(selected.at(i - 1)), *(selected.at(i)));
 		children.push_back(std::make_shared<Individual>(crossed_result.first));
 		children.push_back(std::make_shared<Individual>(crossed_result.second));
 	}
 
-	for ( auto& child : children ) {
+	for ( auto &child : children ) {
 		update_fitness(*child);
 	}
 
@@ -105,9 +107,9 @@ PopulationManager::tournament_selector() {
 
 	for ( int i = 0; i < selected_count; ++i ) {
 		auto best = std::min_element(shuffle_lookup.begin(), shuffle_lookup.end(),
-		                     [](const std::shared_ptr<Individual>& i1, const std::shared_ptr<Individual>& i2) {
-			                     return i1->fitness < i2->fitness;
-		                     });
+		                             [](const std::shared_ptr<Individual> &i1, const std::shared_ptr<Individual> &i2) {
+			                             return i1->fitness < i2->fitness;
+		                             });
 		shuffle_lookup.erase(best);
 		update_fitness(**best);
 		result.push_back(std::move(std::make_shared<Individual>(**best)));
@@ -118,7 +120,7 @@ PopulationManager::tournament_selector() {
 }
 
 std::pair<Individual, Individual>
-PopulationManager::ordered_crossover(const Individual& parent1, const Individual& parent2) {
+PopulationManager::ox_crossover(const Individual &parent1, const Individual &parent2) {
 	std::uniform_int_distribution<int> distribution(0, chromosome_size - 1);
 	int cut_start = distribution(rand_gen);
 	int cut_end = distribution(rand_gen);
@@ -151,10 +153,69 @@ PopulationManager::ordered_crossover(const Individual& parent1, const Individual
 	return {child1, child2};
 }
 
+std::pair<Individual, Individual>
+PopulationManager::pmx_crossover(const Individual &parent1, const Individual &parent2) {
+	std::uniform_int_distribution<> distribution(0, chromosome_size - 1);
+	int cut_start = distribution(rand_gen);
+	int cut_end = distribution(rand_gen);
+	while ( cut_start == cut_end )
+		cut_end = distribution(rand_gen);
+	if ( cut_start > cut_end )
+		std::swap(cut_start, cut_end);
+
+	std::pair<Individual, Individual> offspring {};
+	offspring.first.chromosome.resize(chromosome_size);
+	offspring.second.chromosome.resize(chromosome_size);
+	std::ranges::fill(offspring.first.chromosome, -1);
+	std::ranges::fill(offspring.second.chromosome, -1);
+	for ( int i = cut_start; i <= cut_end; ++i ) {
+		offspring.first.chromosome.at(i) = parent1.chromosome.at(i);
+		offspring.second.chromosome.at(i) = parent2.chromosome.at(i);
+	}
+
+	map_remaining_pmx(parent1, parent2, offspring.first, cut_start, cut_end);
+	map_remaining_pmx(parent2, parent1, offspring.second, cut_start, cut_end);
+
+	return offspring;
+}
+
+/**
+ * 
+ * @param parent1 parent, from which the cut-span chromosomes were taken
+ * @param parent2 second parent
+ * @param offspring result of the crossover
+ * @param cut_start start point of the cut-span
+ * @param cut_end end point of the cut-span
+ */
+void PopulationManager::map_remaining_pmx(const Individual &parent1, const Individual &parent2, Individual &offspring,
+                                          const int cut_start, const int cut_end) {
+	using std::ranges::find;
+	// <parent1 gene, parent2 gene>
+	std::map<int, int> parent1_to_parent2_map;
+	std::set<int> used_genes;
+
+	int cut_distance = cut_end - cut_start + 1;
+	for ( int i = cut_start; i < cut_distance; ++i ) {
+		parent1_to_parent2_map.insert({parent1.chromosome.at(i), parent2.chromosome.at(i)});
+		used_genes.insert(parent1.chromosome.at(i));
+	}
+
+	for ( int i = 0; i < chromosome_size; ++i ) {
+		if ( offspring.chromosome.at(i) != -1 ) continue;
+
+		int gene_to_insert = parent2.chromosome.at(i);
+		while ( used_genes.contains(gene_to_insert) ) {
+			gene_to_insert = parent1_to_parent2_map.at(gene_to_insert);
+		}
+		offspring.chromosome.at(i) = gene_to_insert;
+		used_genes.insert(gene_to_insert);
+	}
+}
+
 void PopulationManager::mutate_population(MutationType mt) {
 	switch ( mt ) {
 		case MutationType::INVERSE: {
-			std::set<std::shared_ptr<Individual>> selected_individuals;
+			std::set<std::shared_ptr<Individual> > selected_individuals;
 			int count = population_size * mut_prob;
 			std::uniform_int_distribution<> distribution(0, population_size - 1);
 
@@ -163,7 +224,7 @@ void PopulationManager::mutate_population(MutationType mt) {
 				selected_individuals.insert(population.at(index));
 			}
 
-			for ( auto& i : selected_individuals ) {
+			for ( auto &i : selected_individuals ) {
 				mutate_inverse(*i);
 			}
 
