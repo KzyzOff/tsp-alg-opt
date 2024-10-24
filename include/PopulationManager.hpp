@@ -31,6 +31,7 @@ public:
 
 	void advance_population();
 	std::vector<std::shared_ptr<Individual>> tournament_selector();
+	std::vector<std::shared_ptr<Individual>> roulette_selector();
 	std::pair<Individual, Individual> ox_crossover(const Individual& parent1, const Individual& parent2);
 	std::pair<Individual, Individual> pmx_crossover(const Individual& parent1, const Individual& parent2);
 	// Add new offspring to the population and then remove the worst ones

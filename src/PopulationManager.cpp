@@ -6,6 +6,7 @@
 #include <random>
 #include <utility>
 #include <set>
+#include <unordered_set>
 
 #include "utils.hpp"
 
@@ -75,17 +76,18 @@ void PopulationManager::generate_random_pop() {
 			population.at(i)->chromosome.at(x) = locations->at(x).n;
 		}
 		std::shuffle(population.at(i)->chromosome.begin(), population.at(i)->chromosome.end(), rand_gen);
+		update_fitness(*population.at(i));
 	}
 }
 
 void PopulationManager::advance_population() {
-	auto selected = tournament_selector();
+	auto selected = roulette_selector();
 	std::vector<std::shared_ptr<Individual> > children;
 	children.reserve(selected.size() / 2);
 	// Skips the last one if selected parents count from the population is odd
 	for ( int i = 1; i < selected.size(); ++i ) {
 		// auto crossed_result = ox_crossover(*(selected.at(i - 1)), *(selected.at(i)));
-		auto crossed_result = pmx_crossover(*(selected.at(i - 1)), *(selected.at(i)));
+		auto crossed_result = pmx_crossover(*selected.at(i - 1), *selected.at(i));
 		children.push_back(std::make_shared<Individual>(crossed_result.first));
 		children.push_back(std::make_shared<Individual>(crossed_result.second));
 	}
@@ -114,6 +116,39 @@ PopulationManager::tournament_selector() {
 		update_fitness(**best);
 		result.push_back(std::move(std::make_shared<Individual>(**best)));
 		std::ranges::shuffle(shuffle_lookup, rand_gen);
+	}
+
+	return result;
+}
+
+std::vector<std::shared_ptr<Individual>>
+PopulationManager::roulette_selector() {
+	auto accumulator = [](float acc, const std::shared_ptr<Individual> i) {
+		return acc + i->fitness;
+	};
+	float total_fitness = std::accumulate(population.begin(), population.end(), 0.f, accumulator);
+	std::vector<float> cumulative_fitness(population_size);
+	cumulative_fitness.at(0) = population.at(0)->fitness / total_fitness;
+	for ( int i = 1; i < population_size; ++i ) {
+		cumulative_fitness.at(i) = cumulative_fitness.at(i - 1) + population.at(i)->fitness / total_fitness;
+	}
+
+	std::uniform_real_distribution<float> distribution(0.f, 1.f);
+	int picked_individuals_count = cross_prob * static_cast<float>(population_size);
+	std::unordered_set<int> picked_individuals_indices;
+	while ( picked_individuals_indices.size() <= picked_individuals_count ) {
+		float picked_value = distribution(rand_gen);
+		int index = 0;
+		while ( index < population_size && picked_value > cumulative_fitness.at(index) ) {
+			++index;
+		}
+		picked_individuals_indices.insert(index);
+	}
+
+	std::vector<std::shared_ptr<Individual>> result;
+	result.reserve(picked_individuals_count);
+	for ( auto i : picked_individuals_indices ) {
+		result.push_back(population.at(i));
 	}
 
 	return result;
