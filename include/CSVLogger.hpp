@@ -11,6 +11,7 @@ public:
 	void commit_row();
 	void add(int col, const std::string& content);
 	void add(int col, const int& content);
+	void add(int col, const float& content);
 
 private:
 	std::string filepath;

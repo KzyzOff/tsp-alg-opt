@@ -40,3 +40,10 @@ void CSVLogger::add(int col, const int& content) {
 
 	row.at(col) = std::to_string(content);
 }
+
+void CSVLogger::add(int col, const float& content) {
+	if ( ! is_in_bounds(col) )
+		return;
+
+	row.at(col) = std::to_string(content);
+}
