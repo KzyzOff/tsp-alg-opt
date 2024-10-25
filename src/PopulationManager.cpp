@@ -7,6 +7,7 @@
 #include <utility>
 #include <set>
 #include <unordered_set>
+#include <functional>
 
 #include "utils.hpp"
 
@@ -81,20 +82,22 @@ void PopulationManager::generate_random_pop() {
 }
 
 void PopulationManager::advance_population() {
-	auto selected = roulette_selector();
+	auto selected_parents = roulette_selector();
 	std::vector<std::shared_ptr<Individual> > children;
-	children.reserve(selected.size() / 2);
+	children.reserve(selected_parents.size());
 	// Skips the last one if selected parents count from the population is odd
-	for ( int i = 1; i < selected.size(); ++i ) {
-		// auto crossed_result = ox_crossover(*(selected.at(i - 1)), *(selected.at(i)));
-		auto crossed_result = pmx_crossover(*selected.at(i - 1), *selected.at(i));
-		children.push_back(std::make_shared<Individual>(crossed_result.first));
-		children.push_back(std::make_shared<Individual>(crossed_result.second));
+	for ( int i = 1; i < selected_parents.size(); i += 2 ) {
+		auto crossover_result = ox_crossover(*selected_parents.at(i - 1), *selected_parents.at(i));
+		// auto crossover_result = pmx_crossover(*selected_parents.at(i - 1), *selected_parents.at(i));
+		children.push_back(std::make_shared<Individual>(crossover_result.first));
+		children.push_back(std::make_shared<Individual>(crossover_result.second));
 	}
 
 	for ( auto &child : children ) {
 		update_fitness(*child);
 	}
+
+	add_reduce(children);
 
 	mutate_population(MutationType::SWAP);
 }
@@ -134,7 +137,7 @@ PopulationManager::roulette_selector() {
 	}
 
 	std::uniform_real_distribution<float> distribution(0.f, 1.f);
-	int picked_individuals_count = cross_prob * static_cast<float>(population_size);
+	int picked_individuals_count = std::round(cross_prob * static_cast<float>(population_size));
 	std::unordered_set<int> picked_individuals_indices;
 	while ( picked_individuals_indices.size() <= picked_individuals_count ) {
 		float picked_value = distribution(rand_gen);
@@ -188,6 +191,7 @@ PopulationManager::ox_crossover(const Individual &parent1, const Individual &par
 	return {child1, child2};
 }
 
+// BUG: program crashes sometimes because of invalid map.at() operation
 std::pair<Individual, Individual>
 PopulationManager::pmx_crossover(const Individual &parent1, const Individual &parent2) {
 	std::uniform_int_distribution<> distribution(0, chromosome_size - 1);
@@ -230,7 +234,7 @@ void PopulationManager::map_remaining_pmx(const Individual &parent1, const Indiv
 	std::set<int> used_genes;
 
 	int cut_distance = cut_end - cut_start + 1;
-	for ( int i = cut_start; i < cut_distance; ++i ) {
+	for ( int i = cut_start; i <= cut_distance; ++i ) {
 		parent1_to_parent2_map.insert({parent1.chromosome.at(i), parent2.chromosome.at(i)});
 		used_genes.insert(parent1.chromosome.at(i));
 	}
@@ -307,4 +311,48 @@ void PopulationManager::mutate_swap(Individual &individual) {
 		second = distribution(rand_gen);
 
 	std::swap(individual.chromosome.at(first), individual.chromosome.at(second));
+}
+
+void PopulationManager::add_reduce(std::vector<std::shared_ptr<Individual>>& new_offspring) {
+	// Add offspring to population
+	for ( auto& individual : new_offspring ) {
+		population.push_back(individual);
+	}
+
+	auto worst_individuals = map_n_worst_to_pop_vector_index(population.size() - population_size);
+
+	// Reduce population
+	for ( auto& [fitness, indices] : worst_individuals ) {
+		for ( auto& i : indices ) {
+			population.erase(population.begin() + i);
+		}
+	}
+}
+
+void PopulationManager::replace_worst(std::vector<std::shared_ptr<Individual>>& new_offspring) {
+
+}
+
+nWorstMap PopulationManager::map_n_worst_to_pop_vector_index(const unsigned int n) {
+	nWorstMap tmp_map;
+	// Map entire population and automatically sort it
+	for ( int i = 0; i < population.size(); ++i ) {
+		tmp_map[population.at(i)->fitness].push_back(i);
+	}
+
+	nWorstMap result;
+	bool done = false;
+	for ( int i = 0; auto& worst : tmp_map ) {
+		if ( done ) break;
+
+		for ( auto& worst_individual : worst.second ) {
+			result[worst.first].push_back(worst_individual);
+			if ( ++i >= n ) {
+				done = true;
+				break;
+			}
+		}
+	}
+
+	return result;
 }

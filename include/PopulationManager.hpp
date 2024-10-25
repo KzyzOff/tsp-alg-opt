@@ -1,6 +1,7 @@
 #pragma once
 
 #include <random>
+#include <map>
 
 #include "Loader.hpp"
 
@@ -20,6 +21,8 @@ enum class MutationType {
 	SWAP
 };
 
+using nWorstMap = std::map<float, std::vector<int>, std::greater<>>;
+
 class PopulationManager {
 public:
 	PopulationManager(unsigned int pop_size, unsigned int gen_count, float cross_prob, float mut_prob,
@@ -35,9 +38,9 @@ public:
 	std::pair<Individual, Individual> ox_crossover(const Individual& parent1, const Individual& parent2);
 	std::pair<Individual, Individual> pmx_crossover(const Individual& parent1, const Individual& parent2);
 	// Add new offspring to the population and then remove the worst ones
-	void add_reduce(std::vector<std::shared_ptr<Individual>>);
+	void add_reduce(std::vector<std::shared_ptr<Individual>>& new_offspring);
 	// Replace worst individuals from the previous generation
-	void replace_worst(std::vector<std::shared_ptr<Individual>>);
+	void replace_worst(std::vector<std::shared_ptr<Individual>>& new_offspring);
 	void mutate_population(MutationType mt);
 
 	FitnessStats calc_fitness_stats();
@@ -58,5 +61,7 @@ private:
 
 	void mutate_inverse(Individual& individual);
 	void mutate_swap(Individual& individual);
+
+	nWorstMap map_n_worst_to_pop_vector_index(const unsigned int n);
 
 };

@@ -4,17 +4,18 @@ TSPSolver::TSPSolver(unsigned int pop_size, unsigned int gen_count, float cross_
                      const std::string &input_filename)
 	: data_loader(input_filename),
 	  pmgr(pop_size, gen_count, cross_prob, mut_prob, data_loader.get_locations()),
-	  logger("test_output.csv", 6),
+	  logger("test_output.csv", 5),
 	  gen_count(gen_count) {
 
 }
 
 void TSPSolver::solve() {
 	pmgr.generate_random_pop();
-	FitnessStats stats = pmgr.calc_fitness_stats();
+	FitnessStats stats {};
 	log_stats_to_file(stats, 0);
 	for ( int i = 0; i < gen_count - 1; ++i ) {
 		pmgr.advance_population();
+		stats  = pmgr.calc_fitness_stats();
 		log_stats_to_file(stats, i + 1);
 	}
 }
