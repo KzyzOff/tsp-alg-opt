@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.28)
 project(TSP)
 
 set(CMAKE_CXX_STANDARD 20)
+if ( CMAKE_BUILD_TYPE STREQUAL "Debug" )
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+endif ()
 
 set(HEADERS_DIR "${PROJECT_SOURCE_DIR}/include")
 set(SOURCES_DIR "${PROJECT_SOURCE_DIR}/src")
@@ -33,4 +36,14 @@ add_executable(${PROJECT_NAME}
         ${HEADERS}
 )
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${HEADERS_DIR})
+set(EXTERNAL_LIB_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/external")
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${HEADERS_DIR} ${EXTERNAL_LIB_INCLUDE_DIR})
+
+# Download JSON library
+file(
+    DOWNLOAD https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp
+    ${EXTERNAL_LIB_INCLUDE_DIR}/json.hpp
+)
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${EXTERNAL_LIB_INCLUDE_DIR})
