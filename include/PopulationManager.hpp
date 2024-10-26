@@ -2,27 +2,18 @@
 
 #include <random>
 #include <map>
-#include <unordered_set>
 
 #include "Loader.hpp"
-
-struct Individual {
-	std::vector<int> chromosome;
-	float fitness;
-};
-
-struct FitnessStats {
-	float worst;
-	float best;
-	float mean;
-};
+#include "types.hpp"
+#include "selectors/TournamentSelector.hpp"
 
 enum class MutationType {
 	INVERSE,
 	SWAP
 };
 
-using nWorstMap = std::map<float, std::vector<int>, std::greater<> >;
+using nWorstMap = std::map<float, std::vector<int>, std::greater<>>;
+using namespace tsp_t;
 
 class PopulationManager {
 public:
@@ -34,8 +25,8 @@ public:
 	void update_fitness(Individual& individual);
 
 	void advance_population();
-	std::vector<std::shared_ptr<Individual>> tournament_selector();
-	std::vector<std::shared_ptr<Individual>> roulette_selector();
+	IndividualPtrVec tournament_selector();
+	IndividualPtrVec roulette_selector();
 
 	std::pair<Individual, Individual> ox_crossover(const Individual& parent1, const Individual& parent2);
 	std::pair<Individual, Individual> pmx_crossover(const Individual& parent1, const Individual& parent2);
@@ -48,20 +39,26 @@ public:
 	FitnessStats calc_fitness_stats();
 	std::shared_ptr<const Individual> get_goat() const { return goat_individual; }
 
+	IndividualPtrVec get_population() const { return population; }
+
 private:
+	TournamentSelector tour_selector;
+
+	const unsigned int cross_pop_count;
+
 	unsigned int population_size;
 	unsigned int generation_count;
 	float cross_prob;
 	float mut_prob;
 	std::shared_ptr<const std::vector<Location>> locations;
-	std::vector<std::shared_ptr<Individual> > population;
+	IndividualPtrVec population;
 	std::shared_ptr<Individual> goat_individual;
 	size_t chromosome_size;
 
 	std::random_device rand_dev;
 	std::mt19937 rand_gen;
 
-	std::vector<std::shared_ptr<Individual>> get_n_best(const int n);
+	IndividualPtrVec get_n_best(const int n);
 
 	void map_remaining_pmx(const Individual &parent1, const Individual &parent2, Individual &offspring,
 	                       const int cut_start, const int cut_end);

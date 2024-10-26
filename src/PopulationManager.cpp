@@ -21,7 +21,9 @@ PopulationManager::PopulationManager(unsigned int pop_size, unsigned int gen_cou
 	  mut_prob(mut_prob),
 	  locations(locations),
 	  chromosome_size(locations->size()),
-	  rand_gen(rand_dev()) {
+	  rand_gen(rand_dev()),
+	  tour_selector(population, rand_gen),
+	  cross_pop_count(pop_size * cross_prob) {
 	generate_random_pop();
 	update_pop_fitness();
 }
@@ -83,13 +85,13 @@ void PopulationManager::generate_random_pop() {
 		update_fitness(*population.at(i));
 	}
 
-	goat_individual = *std::ranges::min_element(population, [](const std::shared_ptr<Individual>& i1, const std::shared_ptr<Individual>& i2) {
+	goat_individual = *std::ranges::min_element(population, [](const IndividualPtr& i1, const IndividualPtr& i2) {
 		return i1->fitness < i2->fitness;
 	});
 }
 
 void PopulationManager::advance_population() {
-	auto selected_parents = tournament_selector();
+	auto selected_parents = tour_selector.select_n(cross_pop_count);
 	std::vector<std::shared_ptr<Individual> > children;
 	children.reserve(selected_parents.size());
 	// Skips the last one if selected parents count from the population is odd
