@@ -32,6 +32,7 @@ void PopulationManager::update_pop_fitness() {
 }
 
 void PopulationManager::update_fitness(Individual &individual) {
+	individual.fitness = 0.f;
 	for ( size_t i = 0; i < chromosome_size; ++i ) {
 		if ( i == chromosome_size - 1 ) {
 			individual.fitness += calc_distance(locations->at(individual.chromosome.at(i) - 1).x,
@@ -48,11 +49,11 @@ void PopulationManager::update_fitness(Individual &individual) {
 }
 
 FitnessStats PopulationManager::calc_fitness_stats() {
-	auto comparator = [](const std::shared_ptr<Individual> i1, const std::shared_ptr<Individual> i2) {
+	auto comparator = [](const std::shared_ptr<Individual> &i1, const std::shared_ptr<Individual> &i2) {
 		return i1->fitness < i2->fitness;
 	};
 
-	auto accumulator = [](float acc, const std::shared_ptr<Individual> i) {
+	auto accumulator = [](float acc, const std::shared_ptr<Individual> &i) {
 		return acc + i->fitness;
 	};
 
@@ -79,6 +80,10 @@ void PopulationManager::generate_random_pop() {
 		std::shuffle(population.at(i)->chromosome.begin(), population.at(i)->chromosome.end(), rand_gen);
 		update_fitness(*population.at(i));
 	}
+
+	goat_individual = *std::ranges::min_element(population, [](const std::shared_ptr<Individual>& i1, const std::shared_ptr<Individual>& i2) {
+		return i1->fitness < i2->fitness;
+	});
 }
 
 void PopulationManager::advance_population() {
@@ -93,13 +98,16 @@ void PopulationManager::advance_population() {
 		children.push_back(std::make_shared<Individual>(crossover_result.second));
 	}
 
-	for ( auto &child : children ) {
-		update_fitness(*child);
-	}
-
 	add_reduce(children);
-
 	mutate_population(MutationType::SWAP);
+	update_pop_fitness();
+
+	auto generation_best = *std::ranges::min_element(population,
+		[](const std::shared_ptr<Individual> &i1, const std::shared_ptr<Individual> &i2) {
+				return i1->fitness < i2->fitness;
+	});
+	if ( generation_best->fitness < goat_individual->fitness )
+		goat_individual = generation_best;
 }
 
 std::vector<std::shared_ptr<Individual> >
@@ -327,10 +335,6 @@ void PopulationManager::add_reduce(std::vector<std::shared_ptr<Individual>>& new
 			population.erase(population.begin() + i);
 		}
 	}
-}
-
-void PopulationManager::replace_worst(std::vector<std::shared_ptr<Individual>>& new_offspring) {
-
 }
 
 nWorstMap PopulationManager::map_n_worst_to_pop_vector_index(const unsigned int n) {

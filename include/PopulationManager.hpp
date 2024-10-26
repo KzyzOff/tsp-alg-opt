@@ -39,11 +39,10 @@ public:
 	std::pair<Individual, Individual> pmx_crossover(const Individual& parent1, const Individual& parent2);
 	// Add new offspring to the population and then remove the worst ones
 	void add_reduce(std::vector<std::shared_ptr<Individual>>& new_offspring);
-	// Replace worst individuals from the previous generation
-	void replace_worst(std::vector<std::shared_ptr<Individual>>& new_offspring);
 	void mutate_population(MutationType mt);
 
 	FitnessStats calc_fitness_stats();
+	std::shared_ptr<const Individual> get_goat() const { return goat_individual; }
 
 private:
 	unsigned int population_size;
@@ -52,6 +51,7 @@ private:
 	float mut_prob;
 	std::shared_ptr<const std::vector<Location>> locations;
 	std::vector<std::shared_ptr<Individual>> population;
+	std::shared_ptr<Individual> goat_individual;
 	size_t chromosome_size;
 
 	std::random_device rand_dev;
