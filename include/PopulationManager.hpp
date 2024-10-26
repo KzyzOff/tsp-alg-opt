@@ -25,7 +25,6 @@ public:
 	void update_fitness(Individual& individual);
 
 	void advance_population();
-	IndividualPtrVec tournament_selector();
 	IndividualPtrVec roulette_selector();
 
 	std::pair<Individual, Individual> ox_crossover(const Individual& parent1, const Individual& parent2);

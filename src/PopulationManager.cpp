@@ -114,29 +114,6 @@ void PopulationManager::advance_population() {
 }
 
 std::vector<std::shared_ptr<Individual>>
-PopulationManager::tournament_selector() {
-	std::unordered_set<std::shared_ptr<Individual>> pop_lookup(population.begin(), population.end());
-	int selected_count = cross_prob * static_cast<float>(population_size);
-
-	std::unordered_set<std::shared_ptr<Individual>> result;
-	while ( result.size() < selected_count ) {
-		std::unordered_set<std::shared_ptr<Individual>> tournament_round_selected;
-		while ( tournament_round_selected.size() < TOURNAMENT_SIZE ) {
-			auto distribution = std::uniform_int_distribution<>(0, pop_lookup.size() - 1);
-			tournament_round_selected.insert(population.at(distribution(rand_gen)));
-		}
-
-		auto best = std::min_element(tournament_round_selected.begin(), tournament_round_selected.end(),
-								 [](const std::shared_ptr<Individual> &i1, const std::shared_ptr<Individual> &i2) {
-									 return i1->fitness < i2->fitness;
-								 });
-		result.insert(std::move(std::make_shared<Individual>(**best)));
-	}
-
-	return { result.begin(), result.end() };
-}
-
-std::vector<std::shared_ptr<Individual>>
 PopulationManager::roulette_selector() {
 	auto accumulator = [](float acc, const std::shared_ptr<Individual> i) {
 		return acc + i->fitness;
