@@ -8,7 +8,9 @@
 #include <set>
 #include <unordered_set>
 #include <functional>
+#include <list>
 
+#include "constants.hpp"
 #include "utils.hpp"
 
 PopulationManager::PopulationManager(unsigned int pop_size, unsigned int gen_count, float cross_prob, float mut_prob,
@@ -58,8 +60,8 @@ FitnessStats PopulationManager::calc_fitness_stats() {
 	};
 
 	FitnessStats result {
-		.worst = std::min_element(population.begin(), population.end(), comparator)->get()->fitness,
-		.best = std::max_element(population.begin(), population.end(), comparator)->get()->fitness,
+		.worst = std::max_element(population.begin(), population.end(), comparator)->get()->fitness,
+		.best = std::min_element(population.begin(), population.end(), comparator)->get()->fitness,
 		.mean = std::accumulate(population.begin(), population.end(), 1.f, accumulator) / static_cast<float>(
 			        population.size())
 	};
@@ -87,13 +89,12 @@ void PopulationManager::generate_random_pop() {
 }
 
 void PopulationManager::advance_population() {
-	auto selected_parents = roulette_selector();
+	auto selected_parents = tournament_selector();
 	std::vector<std::shared_ptr<Individual> > children;
 	children.reserve(selected_parents.size());
 	// Skips the last one if selected parents count from the population is odd
 	for ( int i = 1; i < selected_parents.size(); i += 2 ) {
 		auto crossover_result = ox_crossover(*selected_parents.at(i - 1), *selected_parents.at(i));
-		// auto crossover_result = pmx_crossover(*selected_parents.at(i - 1), *selected_parents.at(i));
 		children.push_back(std::make_shared<Individual>(crossover_result.first));
 		children.push_back(std::make_shared<Individual>(crossover_result.second));
 	}
@@ -110,26 +111,27 @@ void PopulationManager::advance_population() {
 		goat_individual = generation_best;
 }
 
-std::vector<std::shared_ptr<Individual> >
+std::vector<std::shared_ptr<Individual>>
 PopulationManager::tournament_selector() {
-	std::vector<std::shared_ptr<Individual> > result;
-	std::vector<std::shared_ptr<Individual> > shuffle_lookup(population.begin(), population.end());
-	std::ranges::shuffle(shuffle_lookup, rand_gen);
+	std::unordered_set<std::shared_ptr<Individual>> pop_lookup(population.begin(), population.end());
 	int selected_count = cross_prob * static_cast<float>(population_size);
-	result.reserve(selected_count);
 
-	for ( int i = 0; i < selected_count; ++i ) {
-		auto best = std::min_element(shuffle_lookup.begin(), shuffle_lookup.end(),
-		                             [](const std::shared_ptr<Individual> &i1, const std::shared_ptr<Individual> &i2) {
-			                             return i1->fitness < i2->fitness;
-		                             });
-		shuffle_lookup.erase(best);
-		update_fitness(**best);
-		result.push_back(std::move(std::make_shared<Individual>(**best)));
-		std::ranges::shuffle(shuffle_lookup, rand_gen);
+	std::unordered_set<std::shared_ptr<Individual>> result;
+	while ( result.size() < selected_count ) {
+		std::unordered_set<std::shared_ptr<Individual>> tournament_round_selected;
+		while ( tournament_round_selected.size() < TOURNAMENT_SIZE ) {
+			auto distribution = std::uniform_int_distribution<>(0, pop_lookup.size() - 1);
+			tournament_round_selected.insert(population.at(distribution(rand_gen)));
+		}
+
+		auto best = std::min_element(tournament_round_selected.begin(), tournament_round_selected.end(),
+								 [](const std::shared_ptr<Individual> &i1, const std::shared_ptr<Individual> &i2) {
+									 return i1->fitness < i2->fitness;
+								 });
+		result.insert(std::move(std::make_shared<Individual>(**best)));
 	}
 
-	return result;
+	return { result.begin(), result.end() };
 }
 
 std::vector<std::shared_ptr<Individual>>
@@ -175,28 +177,38 @@ PopulationManager::ox_crossover(const Individual &parent1, const Individual &par
 	if ( cut_start > cut_end )
 		std::swap(cut_start, cut_end);
 
-	Individual child1 {};
-	child1.chromosome.reserve(chromosome_size);
-	child1.chromosome.insert(child1.chromosome.end(),
-	                         parent1.chromosome.begin(), parent1.chromosome.begin() + cut_start);
-	child1.chromosome.insert(child1.chromosome.end(), parent2.chromosome.begin() + cut_start,
-	                         parent2.chromosome.begin() + cut_end);
-	child1.chromosome.insert(child1.chromosome.end(), parent1.chromosome.begin() + cut_end,
-	                         parent1.chromosome.end());
-	update_fitness(child1);
+	auto offspring1 = cross_parents_ox(parent1, parent2, cut_start, cut_end);
+	auto offspring2 = cross_parents_ox(parent2, parent1, cut_start, cut_end);
 
-	Individual child2 {};
-	child2.chromosome.reserve(chromosome_size);
-	child2.chromosome.insert(child2.chromosome.end(),
-	                         parent2.chromosome.begin(), parent2.chromosome.begin() + cut_start);
-	child2.chromosome.insert(child2.chromosome.end(), parent1.chromosome.begin() + cut_start,
-	                         parent1.chromosome.begin() + cut_end);
-	child2.chromosome.insert(child2.chromosome.end(), parent2.chromosome.begin() + cut_end,
-	                         parent2.chromosome.end());
+	return {offspring1, offspring2};
+}
 
-	update_fitness(child2);
+Individual PopulationManager::cross_parents_ox(const Individual &parent1, const Individual &parent2,
+                                                 const int cut_start, const int cut_end) {
+	const std::set<int> used_genes(parent1.chromosome.begin() + cut_start, parent1.chromosome.begin() + cut_end);
+	std::vector<int> remaining_genes;
+	remaining_genes.resize(chromosome_size - (cut_end - cut_start));
+	int remaining_idx = 0;
+	for ( int i = 0; i < chromosome_size; ++i ) {
+		if ( used_genes.contains(parent2.chromosome.at(i)) ) continue;
 
-	return {child1, child2};
+		remaining_genes.at(remaining_idx) = parent2.chromosome.at(i);
+		++remaining_idx;
+	}
+
+	Individual offspring;
+	offspring.chromosome.reserve(chromosome_size);
+
+	for ( int i = 0; i < remaining_genes.size(); ++i ) {
+		if ( i == cut_start ) {
+			offspring.chromosome.insert(offspring.chromosome.end(), parent1.chromosome.begin() + cut_start,
+										parent1.chromosome.begin() + cut_end);
+		}
+
+		offspring.chromosome.push_back(remaining_genes.at(i));
+	}
+
+	return offspring;
 }
 
 // BUG: program crashes sometimes because of invalid map.at() operation
