@@ -30,8 +30,6 @@ public:
 
 	void advance_population();
 
-	std::pair<Individual, Individual> pmx_crossover(const Individual& parent1, const Individual& parent2);
-
 	void mutate_population(MutationType mt);
 
 	// Add new offspring to the population and then remove the worst ones
@@ -56,11 +54,9 @@ private:
 	TournamentSelector tour_selector;
 	RouletteSelector roulette_selector;
 	OXOPerator ox_operator;
+	PMXOperator pmx_operator;
 
 	std::shared_ptr<Individual> goat_individual;
-
-	void map_remaining_pmx(const Individual &parent1, const Individual &parent2, Individual &offspring,
-	                       int cut_start, int cut_end);
 
 	void mutate_inverse(Individual &individual);
 	void mutate_swap(Individual &individual);

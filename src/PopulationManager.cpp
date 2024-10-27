@@ -24,7 +24,8 @@ PopulationManager::PopulationManager(unsigned int pop_size, float cross_prob, fl
 	  population(pop_size, InitType::RANDOM, locations, rand_gen),
 	  tour_selector(population.get_population(), rand_gen),
 	  roulette_selector(population.get_population(), rand_gen),
-	  ox_operator(population.get_population(), rand_gen, cross_pop_count) {
+	  ox_operator(population.get_population(), rand_gen, cross_pop_count),
+	  pmx_operator(population.get_population(), rand_gen, cross_pop_count) {
 	update_pop_fitness();
 	goat_individual = *std::ranges::min_element(population.get_population(), [](const IndividualPtr &i1, const IndividualPtr &i2) {
 		return i1->fitness < i2->fitness;
@@ -80,8 +81,7 @@ void PopulationManager::advance_population() {
 	children.reserve(selected_parents.size());
 	// Skips the last one if selected parents count from the population is odd
 	for ( int i = 1; i < selected_parents.size(); i += 2 ) {
-		// auto crossover_result = ox_crossover(*selected_parents.at(i - 1), *selected_parents.at(i));
-		auto crossover_result = ox_operator.cross(*selected_parents.at(i - 1), *selected_parents.at(i));
+		auto crossover_result = pmx_operator.cross(*selected_parents.at(i - 1), *selected_parents.at(i));
 		children.push_back(std::make_shared<Individual>(crossover_result.first));
 		children.push_back(std::make_shared<Individual>(crossover_result.second));
 	}
@@ -96,66 +96,6 @@ void PopulationManager::advance_population() {
 	});
 	if ( generation_best->fitness < goat_individual->fitness )
 		goat_individual = generation_best;
-}
-
-// BUG: program crashes sometimes because of invalid map.at() operation
-std::pair<Individual, Individual>
-PopulationManager::pmx_crossover(const Individual &parent1, const Individual &parent2) {
-	std::uniform_int_distribution<> distribution(0, chromosome_size - 1);
-	int cut_start = distribution(rand_gen);
-	int cut_end = distribution(rand_gen);
-	while ( cut_start == cut_end )
-		cut_end = distribution(rand_gen);
-	if ( cut_start > cut_end )
-		std::swap(cut_start, cut_end);
-
-	std::pair<Individual, Individual> offspring {};
-	offspring.first.chromosome.resize(chromosome_size);
-	offspring.second.chromosome.resize(chromosome_size);
-	std::ranges::fill(offspring.first.chromosome, -1);
-	std::ranges::fill(offspring.second.chromosome, -1);
-	for ( int i = cut_start; i <= cut_end; ++i ) {
-		offspring.first.chromosome.at(i) = parent1.chromosome.at(i);
-		offspring.second.chromosome.at(i) = parent2.chromosome.at(i);
-	}
-
-	map_remaining_pmx(parent1, parent2, offspring.first, cut_start, cut_end);
-	map_remaining_pmx(parent2, parent1, offspring.second, cut_start, cut_end);
-
-	return offspring;
-}
-
-/**
- * 
- * @param parent1 parent, from which the cut-span chromosomes were taken
- * @param parent2 second parent
- * @param offspring result of the crossover
- * @param cut_start start point of the cut-span
- * @param cut_end end point of the cut-span
- */
-void PopulationManager::map_remaining_pmx(const Individual &parent1, const Individual &parent2, Individual &offspring,
-                                          const int cut_start, const int cut_end) {
-	using std::ranges::find;
-	// <parent1 gene, parent2 gene>
-	std::map<int, int> parent1_to_parent2_map;
-	std::set<int> used_genes;
-
-	int cut_distance = cut_end - cut_start + 1;
-	for ( int i = cut_start; i <= cut_distance; ++i ) {
-		parent1_to_parent2_map.insert({parent1.chromosome.at(i), parent2.chromosome.at(i)});
-		used_genes.insert(parent1.chromosome.at(i));
-	}
-
-	for ( int i = 0; i < chromosome_size; ++i ) {
-		if ( offspring.chromosome.at(i) != -1 ) continue;
-
-		int gene_to_insert = parent2.chromosome.at(i);
-		while ( used_genes.contains(gene_to_insert) ) {
-			gene_to_insert = parent1_to_parent2_map.at(gene_to_insert);
-		}
-		offspring.chromosome.at(i) = gene_to_insert;
-		used_genes.insert(gene_to_insert);
-	}
 }
 
 void PopulationManager::mutate_population(MutationType mt) {

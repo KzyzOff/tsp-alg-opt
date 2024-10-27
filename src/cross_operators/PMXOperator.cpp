@@ -1,3 +1,58 @@
-//
-// Created by krzys on 27.10.2024.
-//
+#include "cross_operators/PMXOperator.hpp"
+
+#include <set>
+#include <map>
+#include <algorithm>
+
+PMXOperator::PMXOperator(IndividualPtrVec &population, std::mt19937 &rand_gen, unsigned int chosen_parent_count)
+	: CrossOperator(population, rand_gen, chosen_parent_count) {
+}
+
+std::pair<Individual, Individual> PMXOperator::cross(const Individual &parent1, const Individual &parent2) {
+	std::uniform_int_distribution<> distribution(0, chromosome_size - 1);
+	int cut_start = distribution(rand_gen);
+	int cut_end = distribution(rand_gen);
+	while ( cut_start == cut_end )
+		cut_end = distribution(rand_gen);
+	if ( cut_start > cut_end )
+		std::swap(cut_start, cut_end);
+
+	std::pair<Individual, Individual> offspring {};
+	offspring.first.chromosome.resize(chromosome_size);
+	offspring.second.chromosome.resize(chromosome_size);
+	std::ranges::fill(offspring.first.chromosome, -1);
+	std::ranges::fill(offspring.second.chromosome, -1);
+	for ( int i = cut_start; i < cut_end; ++i ) {
+		offspring.first.chromosome.at(i) = parent1.chromosome.at(i);
+		offspring.second.chromosome.at(i) = parent2.chromosome.at(i);
+	}
+
+	map_remaining_pmx(parent1, parent2, offspring.first, cut_start, cut_end);
+	map_remaining_pmx(parent2, parent1, offspring.second, cut_start, cut_end);
+
+	return offspring;
+}
+
+void PMXOperator::map_remaining_pmx(const Individual &parent1, const Individual &parent2, Individual &offspring,
+                                    int cut_start, int cut_end) {
+	using std::ranges::find;
+	// <parent1 gene, parent2 gene>
+	std::map<int, int> parent1_to_parent2_map;
+	std::set<int> used_genes;
+
+	for ( int i = cut_start; i < cut_end; ++i ) {
+		parent1_to_parent2_map.insert({parent1.chromosome.at(i), parent2.chromosome.at(i)});
+		used_genes.insert(parent1.chromosome.at(i));
+	}
+
+	for ( int i = 0; i < chromosome_size; ++i ) {
+		if ( offspring.chromosome.at(i) != -1 ) continue;
+
+		int gene_to_insert = parent2.chromosome.at(i);
+		while ( used_genes.contains(gene_to_insert) ) {
+			gene_to_insert = parent1_to_parent2_map.at(gene_to_insert);
+		}
+		offspring.chromosome.at(i) = gene_to_insert;
+		used_genes.insert(gene_to_insert);
+	}
+}

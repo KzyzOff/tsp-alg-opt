@@ -1,8 +1,15 @@
-//
-// Created by krzys on 27.10.2024.
-//
+#pragma once
 
-#ifndef PMXOPERATOR_HPP
-#define PMXOPERATOR_HPP
+#include "cross_operators/CrossOperator.hpp"
 
-#endif //PMXOPERATOR_HPP
+class PMXOperator : public CrossOperator {
+public:
+	PMXOperator(IndividualPtrVec &population, std::mt19937 &rand_gen, unsigned int chosen_parent_count);
+
+	std::pair<Individual, Individual> cross(const Individual &parent1, const Individual &parent2) override;
+
+private:
+	void map_remaining_pmx(const Individual &parent1, const Individual &parent2, Individual &offspring,
+						   int cut_start, int cut_end);
+
+};
