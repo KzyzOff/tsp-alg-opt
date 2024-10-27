@@ -4,11 +4,9 @@
 #include <memory>
 
 #include "Graph.hpp"
+#include "types.hpp"
 
-struct Location {
-	int n;
-	float x, y;
-};
+using namespace tsp_t;
 
 class Loader {
 public:
@@ -17,7 +15,7 @@ public:
 	void load(const char* filename);
 
 	std::shared_ptr<Graph> get_lookup_graph();
-	std::shared_ptr<const std::vector<Location>> get_locations() const {
+	LocationsPtr get_locations() const {
 		return std::make_shared<std::vector<Location>>(locations);
 	}
 

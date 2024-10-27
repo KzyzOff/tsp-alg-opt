@@ -13,8 +13,11 @@ set(
         ${SOURCES_DIR}/utils.cpp
         ${SOURCES_DIR}/CSVLogger.cpp
         ${SOURCES_DIR}/TSPSolver.cpp
+        ${SOURCES_DIR}/Population.cpp
         ${SOURCES_DIR}/selectors/TournamentSelector.cpp
         ${SOURCES_DIR}/selectors/RouletteSelector.cpp
+        ${SOURCES_DIR}/cross_operators/OXOperator.cpp
+        ${SOURCES_DIR}/cross_operators/PMXOperator.cpp
         ${SOURCES_DIR}/Graph.cpp
         ${SOURCES_DIR}/Greedy.cpp
         ${SOURCES_DIR}/Loader.cpp
@@ -27,9 +30,13 @@ set(
         ${HEADERS_DIR}/types.hpp
         ${HEADERS_DIR}/CSVLogger.hpp
         ${HEADERS_DIR}/TSPSolver.hpp
+        ${HEADERS_DIR}/Population.hpp
         ${HEADERS_DIR}/selectors/Selector.hpp
         ${HEADERS_DIR}/selectors/TournamentSelector.hpp
         ${HEADERS_DIR}/selectors/RouletteSelector.hpp
+        ${HEADERS_DIR}/cross_operators/CrossOperator.hpp
+        ${HEADERS_DIR}/cross_operators/OXOperator.hpp
+        ${HEADERS_DIR}/cross_operators/PMXOperator.hpp
         ${HEADERS_DIR}/Graph.hpp
         ${HEADERS_DIR}/Greedy.hpp
         ${HEADERS_DIR}/Loader.hpp

@@ -21,7 +21,7 @@ IndividualPtrVec RouletteSelector::select_n(unsigned int n) {
 
 	std::uniform_real_distribution<float> distribution(0.f, 1.f * ROULETTE_SCALER);
 	std::unordered_set<int> picked_individuals_indices;
-	while ( picked_individuals_indices.size() <= n ) {
+	while ( picked_individuals_indices.size() < n ) {
 		float picked_value = distribution(rand_gen);
 		int index = 0;
 		while ( index < population.size() && picked_value > cumulative_fitness.at(index) ) {

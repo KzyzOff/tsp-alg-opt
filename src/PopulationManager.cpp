@@ -10,28 +10,30 @@
 #include <functional>
 #include <list>
 
-#include "constants.hpp"
 #include "utils.hpp"
 
-PopulationManager::PopulationManager(unsigned int pop_size, unsigned int gen_count, float cross_prob, float mut_prob,
-                                     std::shared_ptr<const std::vector<Location>> locations)
-	: population_size(pop_size),
-	  generation_count(gen_count),
+PopulationManager::PopulationManager(unsigned int pop_size, float cross_prob, float mut_prob,
+                                     LocationsPtr locations)
+	: cross_pop_count(pop_size * cross_prob),
+	  population_size(pop_size),
 	  cross_prob(cross_prob),
 	  mut_prob(mut_prob),
 	  locations(locations),
 	  chromosome_size(locations->size()),
 	  rand_gen(rand_dev()),
-	  tour_selector(population, rand_gen),
-	  roulette_selector(population, rand_gen),
-	  cross_pop_count(pop_size * cross_prob) {
-	generate_random_pop();
+	  population(pop_size, InitType::RANDOM, locations, rand_gen),
+	  tour_selector(population.get_population(), rand_gen),
+	  roulette_selector(population.get_population(), rand_gen),
+	  ox_operator(population.get_population(), rand_gen, cross_pop_count) {
 	update_pop_fitness();
+	goat_individual = *std::ranges::min_element(population.get_population(), [](const IndividualPtr &i1, const IndividualPtr &i2) {
+		return i1->fitness < i2->fitness;
+	});
 }
 
 // TODO: add precalculated lookup table for distances
 void PopulationManager::update_pop_fitness() {
-	for ( auto &individual : population ) {
+	for ( auto &individual : population.get_population() ) {
 		update_fitness(*individual);
 	}
 }
@@ -63,32 +65,13 @@ FitnessStats PopulationManager::calc_fitness_stats() {
 	};
 
 	FitnessStats result {
-		.worst = std::max_element(population.begin(), population.end(), comparator)->get()->fitness,
-		.best = std::min_element(population.begin(), population.end(), comparator)->get()->fitness,
-		.mean = std::accumulate(population.begin(), population.end(), 1.f, accumulator) / static_cast<float>(
-			        population.size())
+		.worst = std::max_element(population.get_population().begin(), population.get_population().end(), comparator)->get()->fitness,
+		.best = std::min_element(population.get_population().begin(), population.get_population().end(), comparator)->get()->fitness,
+		.mean = std::accumulate(population.get_population().begin(), population.get_population().end(), 1.f, accumulator) / static_cast<float>(
+			        population.get_population().size())
 	};
 
 	return result;
-}
-
-void PopulationManager::generate_random_pop() {
-	population.clear();
-	population.resize(population_size);
-	for ( size_t i = 0; i < population_size; ++i ) {
-		population.at(i) = std::make_shared<Individual>();
-
-		population.at(i)->chromosome.resize(locations->size());
-		for ( int x = 0; x < locations->size(); ++x ) {
-			population.at(i)->chromosome.at(x) = locations->at(x).n;
-		}
-		std::shuffle(population.at(i)->chromosome.begin(), population.at(i)->chromosome.end(), rand_gen);
-		update_fitness(*population.at(i));
-	}
-
-	goat_individual = *std::ranges::min_element(population, [](const IndividualPtr& i1, const IndividualPtr& i2) {
-		return i1->fitness < i2->fitness;
-	});
 }
 
 void PopulationManager::advance_population() {
@@ -97,7 +80,8 @@ void PopulationManager::advance_population() {
 	children.reserve(selected_parents.size());
 	// Skips the last one if selected parents count from the population is odd
 	for ( int i = 1; i < selected_parents.size(); i += 2 ) {
-		auto crossover_result = ox_crossover(*selected_parents.at(i - 1), *selected_parents.at(i));
+		// auto crossover_result = ox_crossover(*selected_parents.at(i - 1), *selected_parents.at(i));
+		auto crossover_result = ox_operator.cross(*selected_parents.at(i - 1), *selected_parents.at(i));
 		children.push_back(std::make_shared<Individual>(crossover_result.first));
 		children.push_back(std::make_shared<Individual>(crossover_result.second));
 	}
@@ -106,56 +90,12 @@ void PopulationManager::advance_population() {
 	mutate_population(MutationType::SWAP);
 	update_pop_fitness();
 
-	auto generation_best = *std::ranges::min_element(population,
+	auto generation_best = *std::ranges::min_element(population.get_population(),
 		[](const std::shared_ptr<Individual> &i1, const std::shared_ptr<Individual> &i2) {
 				return i1->fitness < i2->fitness;
 	});
 	if ( generation_best->fitness < goat_individual->fitness )
 		goat_individual = generation_best;
-}
-
-std::pair<Individual, Individual>
-PopulationManager::ox_crossover(const Individual &parent1, const Individual &parent2) {
-	std::uniform_int_distribution<int> distribution(0, chromosome_size - 1);
-	int cut_start = distribution(rand_gen);
-	int cut_end = distribution(rand_gen);
-	while ( cut_start == cut_end )
-		cut_end = distribution(rand_gen);
-	if ( cut_start > cut_end )
-		std::swap(cut_start, cut_end);
-
-	auto offspring1 = cross_parents_ox(parent1, parent2, cut_start, cut_end);
-	auto offspring2 = cross_parents_ox(parent2, parent1, cut_start, cut_end);
-
-	return {offspring1, offspring2};
-}
-
-Individual PopulationManager::cross_parents_ox(const Individual &parent1, const Individual &parent2,
-                                                 const int cut_start, const int cut_end) {
-	const std::set<int> used_genes(parent1.chromosome.begin() + cut_start, parent1.chromosome.begin() + cut_end);
-	std::vector<int> remaining_genes;
-	remaining_genes.resize(chromosome_size - (cut_end - cut_start));
-	int remaining_idx = 0;
-	for ( int i = 0; i < chromosome_size; ++i ) {
-		if ( used_genes.contains(parent2.chromosome.at(i)) ) continue;
-
-		remaining_genes.at(remaining_idx) = parent2.chromosome.at(i);
-		++remaining_idx;
-	}
-
-	Individual offspring;
-	offspring.chromosome.reserve(chromosome_size);
-
-	for ( int i = 0; i < remaining_genes.size(); ++i ) {
-		if ( i == cut_start ) {
-			offspring.chromosome.insert(offspring.chromosome.end(), parent1.chromosome.begin() + cut_start,
-										parent1.chromosome.begin() + cut_end);
-		}
-
-		offspring.chromosome.push_back(remaining_genes.at(i));
-	}
-
-	return offspring;
 }
 
 // BUG: program crashes sometimes because of invalid map.at() operation
@@ -227,7 +167,7 @@ void PopulationManager::mutate_population(MutationType mt) {
 
 			while ( selected_individuals.size() < count ) {
 				int index = distribution(rand_gen);
-				selected_individuals.insert(population.at(index));
+				selected_individuals.insert(population.get_population().at(index));
 			}
 
 			for ( auto &i : selected_individuals ) {
@@ -246,7 +186,7 @@ void PopulationManager::mutate_population(MutationType mt) {
 
 			std::ranges::shuffle(idx, rand_gen);
 			for ( int i = 0; i < mut_prob * population_size; ++i ) {
-				mutate_swap(*population.at(i));
+				mutate_swap(*population.get_population().at(i));
 			}
 
 			break;
@@ -283,15 +223,15 @@ void PopulationManager::mutate_swap(Individual &individual) {
 void PopulationManager::add_reduce(std::vector<std::shared_ptr<Individual>>& new_offspring) {
 	// Add offspring to population
 	for ( auto& individual : new_offspring ) {
-		population.push_back(individual);
+		population.get_population().push_back(individual);
 	}
 
-	auto worst_individuals = map_n_worst_to_pop_vector_index(population.size() - population_size);
+	auto worst_individuals = map_n_worst_to_pop_vector_index(population.get_population().size() - population_size);
 
 	// Reduce population
 	for ( auto& [fitness, indices] : worst_individuals ) {
 		for ( auto& i : indices ) {
-			population.erase(population.begin() + i);
+			population.get_population().erase(population.get_population().begin() + i);
 		}
 	}
 }
@@ -299,8 +239,8 @@ void PopulationManager::add_reduce(std::vector<std::shared_ptr<Individual>>& new
 nWorstMap PopulationManager::map_n_worst_to_pop_vector_index(const unsigned int n) {
 	nWorstMap tmp_map;
 	// Map entire population and automatically sort it
-	for ( int i = 0; i < population.size(); ++i ) {
-		tmp_map[population.at(i)->fitness].push_back(i);
+	for ( int i = 0; i < population.get_population().size(); ++i ) {
+		tmp_map[population.get_population().at(i)->fitness].push_back(i);
 	}
 
 	nWorstMap result;
