@@ -23,6 +23,7 @@ PopulationManager::PopulationManager(unsigned int pop_size, unsigned int gen_cou
 	  chromosome_size(locations->size()),
 	  rand_gen(rand_dev()),
 	  tour_selector(population, rand_gen),
+	  roulette_selector(population, rand_gen),
 	  cross_pop_count(pop_size * cross_prob) {
 	generate_random_pop();
 	update_pop_fitness();
@@ -91,7 +92,7 @@ void PopulationManager::generate_random_pop() {
 }
 
 void PopulationManager::advance_population() {
-	auto selected_parents = tour_selector.select_n(cross_pop_count);
+	auto selected_parents = roulette_selector.select_n(cross_pop_count);
 	std::vector<std::shared_ptr<Individual> > children;
 	children.reserve(selected_parents.size());
 	// Skips the last one if selected parents count from the population is odd
@@ -111,39 +112,6 @@ void PopulationManager::advance_population() {
 	});
 	if ( generation_best->fitness < goat_individual->fitness )
 		goat_individual = generation_best;
-}
-
-std::vector<std::shared_ptr<Individual>>
-PopulationManager::roulette_selector() {
-	auto accumulator = [](float acc, const std::shared_ptr<Individual> i) {
-		return acc + i->fitness;
-	};
-	float total_fitness = std::accumulate(population.begin(), population.end(), 0.f, accumulator);
-	std::vector<float> cumulative_fitness(population_size);
-	cumulative_fitness.at(0) = population.at(0)->fitness / total_fitness;
-	for ( int i = 1; i < population_size; ++i ) {
-		cumulative_fitness.at(i) = cumulative_fitness.at(i - 1) + population.at(i)->fitness / total_fitness;
-	}
-
-	std::uniform_real_distribution<float> distribution(0.f, 1.f);
-	int picked_individuals_count = std::round(cross_prob * static_cast<float>(population_size));
-	std::unordered_set<int> picked_individuals_indices;
-	while ( picked_individuals_indices.size() <= picked_individuals_count ) {
-		float picked_value = distribution(rand_gen);
-		int index = 0;
-		while ( index < population_size && picked_value > cumulative_fitness.at(index) ) {
-			++index;
-		}
-		picked_individuals_indices.insert(index);
-	}
-
-	std::vector<std::shared_ptr<Individual>> result;
-	result.reserve(picked_individuals_count);
-	for ( auto i : picked_individuals_indices ) {
-		result.push_back(population.at(i));
-	}
-
-	return result;
 }
 
 std::pair<Individual, Individual>

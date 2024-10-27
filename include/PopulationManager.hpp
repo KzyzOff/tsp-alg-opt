@@ -5,6 +5,7 @@
 
 #include "Loader.hpp"
 #include "types.hpp"
+#include "selectors/RouletteSelector.hpp"
 #include "selectors/TournamentSelector.hpp"
 
 enum class MutationType {
@@ -25,7 +26,6 @@ public:
 	void update_fitness(Individual& individual);
 
 	void advance_population();
-	IndividualPtrVec roulette_selector();
 
 	std::pair<Individual, Individual> ox_crossover(const Individual& parent1, const Individual& parent2);
 	std::pair<Individual, Individual> pmx_crossover(const Individual& parent1, const Individual& parent2);
@@ -38,10 +38,9 @@ public:
 	FitnessStats calc_fitness_stats();
 	std::shared_ptr<const Individual> get_goat() const { return goat_individual; }
 
-	IndividualPtrVec get_population() const { return population; }
-
 private:
 	TournamentSelector tour_selector;
+	RouletteSelector roulette_selector;
 
 	const unsigned int cross_pop_count;
 
@@ -56,8 +55,6 @@ private:
 
 	std::random_device rand_dev;
 	std::mt19937 rand_gen;
-
-	IndividualPtrVec get_n_best(const int n);
 
 	void map_remaining_pmx(const Individual &parent1, const Individual &parent2, Individual &offspring,
 	                       const int cut_start, const int cut_end);
