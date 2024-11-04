@@ -2,7 +2,9 @@
 
 #include <algorithm>
 
-Population::Population(unsigned int pop_size, InitType init_type, LocationsPtr locations, std::mt19937& rand_gen)
+#include "utils.hpp"
+
+Population::Population(unsigned int pop_size, InitType init_type, const LocationsPtr locations, std::mt19937& rand_gen)
 	: rand_gen(rand_gen),
 	  locations(locations) {
 	switch (init_type) {
@@ -12,6 +14,24 @@ Population::Population(unsigned int pop_size, InitType init_type, LocationsPtr l
 		case InitType::GREEDY:
 			greedy_init(pop_size);
 			break;
+	}
+}
+
+void Population::update_fitness(Individual &individual) {
+	individual.fitness = 0.f;
+	const int chromosome_size = locations->size();
+	for ( size_t i = 0; i < chromosome_size; ++i ) {
+		if ( i == chromosome_size - 1 ) {
+			individual.fitness += calc_distance(locations->at(individual.chromosome.at(i) - 1).x,
+												locations->at(individual.chromosome.at(i) - 1).y,
+												locations->at(individual.chromosome.at(0) - 1).x,
+												locations->at(individual.chromosome.at(0) - 1).y);
+		} else {
+			individual.fitness += calc_distance(locations->at(individual.chromosome.at(i) - 1).x,
+												locations->at(individual.chromosome.at(i) - 1).y,
+												locations->at(individual.chromosome.at(i + 1) - 1).x,
+												locations->at(individual.chromosome.at(i + 1) - 1).y);
+		}
 	}
 }
 
@@ -26,7 +46,7 @@ void Population::random_init(unsigned int pop_size) {
 			population.at(i)->chromosome.at(x) = locations->at(x).n;
 		}
 		std::ranges::shuffle(population.at(i)->chromosome, rand_gen);
-		// update_fitness(*population.at(i));
+		update_fitness(*population.at(i));
 	}
 
 	goat = *std::ranges::min_element(population, [](const IndividualPtr& i1, const IndividualPtr& i2) {
@@ -37,4 +57,3 @@ void Population::random_init(unsigned int pop_size) {
 void Population::greedy_init(unsigned int pop_size) {
 
 }
-

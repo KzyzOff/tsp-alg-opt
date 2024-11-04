@@ -14,16 +14,16 @@ IndividualPtrVec TournamentSelector::select_n(const unsigned int n) {
 		return i1->fitness < i2->fitness;
 	};
 
+	auto distribution = std::uniform_int_distribution<>(0, population.size() - 1);
 	std::unordered_set<std::shared_ptr<Individual> > result;
 	while ( result.size() < n ) {
 		std::unordered_set<std::shared_ptr<Individual> > tournament_round_selected;
 		while ( tournament_round_selected.size() < TOURNAMENT_SIZE ) {
-			auto distribution = std::uniform_int_distribution<>(0, population.size() - 1);
 			tournament_round_selected.insert(population.at(distribution(rand_gen)));
 		}
 
 		auto best = std::ranges::min_element(tournament_round_selected, comparator);
-		result.insert(std::move(std::make_shared<Individual>(**best)));
+		result.insert(*best);
 	}
 
 	return {result.begin(), result.end()};

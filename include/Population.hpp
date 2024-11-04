@@ -11,11 +11,13 @@ class Population {
 public:
 	Population(unsigned int pop_size, InitType init_type, LocationsPtr locations, std::mt19937& rand_gen);
 
+	void update_fitness(Individual& individual);
+
 	IndividualPtrVec& get_population() { return population; }
 
 private:
 	std::mt19937& rand_gen;
-	LocationsPtr locations;
+	const LocationsPtr locations;
 	IndividualPtrVec population;
 
 	IndividualPtr goat;

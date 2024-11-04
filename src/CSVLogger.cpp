@@ -5,15 +5,25 @@
 
 #include "constants.hpp"
 
-CSVLogger::CSVLogger(const std::string& filename, int n_columns)
-	: filepath(std::string(SIMULATION_RESULTS_PATH).append(filename)),
-	  file(filepath, std::ios_base::app),
+CSVLogger::CSVLogger(const std::filesystem::path &filename, int n_columns)
+	: filepath(SIMULATION_RESULTS_PATH / filepath),
 	  n_columns(n_columns)
 {
-	row.resize(n_columns, "");
+	set_col_number(n_columns);
+	set_output_file(filename);
+}
+
+void CSVLogger::set_output_file(const std::filesystem::path &filename) {
+	const auto filepath = std::filesystem::path(SIMULATION_RESULTS_PATH) / filename;
+	file = std::ofstream(filepath, std::ios_base::app);
 	if ( ! file.is_open() )
 		std::cout << "Error while trying to open the file: "
 				  << "'" << filename << "': " << file.bad() << std::endl;
+}
+
+void CSVLogger::set_col_number(int n) {
+	n_columns = n;
+	row.resize(n_columns, "");
 }
 
 void CSVLogger::commit_row() {

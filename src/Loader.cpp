@@ -6,14 +6,12 @@
 #include "utils.hpp"
 #include "constants.hpp"
 
-Loader::Loader(const std::string &filename) {
-	load(filename.c_str());
+Loader::Loader(const std::filesystem::path &filename) {
+	load(filename);
 }
 
-void Loader::load(const char *filename) {
-	const std::string path = std::string(DATASETS_PATH).append(filename);
-
-	std::ifstream file(path);
+void Loader::load(const std::filesystem::path &filename) {
+	std::ifstream file(DATASETS_PATH / filename);
 
 	std::string line;
 	std::smatch matches;

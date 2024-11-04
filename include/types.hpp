@@ -1,6 +1,8 @@
 #pragma once
 
+#include <vector>
 #include <memory>
+#include <filesystem>
 
 namespace tsp_t
 {
@@ -9,9 +11,38 @@ namespace tsp_t
 		float x, y;
 	};
 
-	enum class InitType {
-		RANDOM,
-		GREEDY
+	enum class InitType : char {
+		RANDOM = 'r',
+		GREEDY = 'g'
+	};
+
+	enum class CrossoverType : char {
+		NONE = 'n',
+		OX = 'o',
+		PMX = 'p'
+	};
+
+	enum class MutationType : char {
+		NONE = 'n',
+		INVERSE = 'i',
+		SWAP = 's'
+	};
+
+	enum class SelectionType : char {
+		TOURNAMENT = 't',
+		ROULETTE = 'r'
+	};
+
+	struct Settings {
+		InitType init_t;
+		CrossoverType cross_t;
+		MutationType mut_t;
+		SelectionType sel_t;
+		float cross_prob;
+		float mut_prob;
+		int pop_size;
+		int gen_count;
+		std::filesystem::path input_file;
 	};
 
 	struct Individual {

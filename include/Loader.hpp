@@ -10,9 +10,9 @@ using namespace tsp_t;
 
 class Loader {
 public:
-	explicit Loader(const std::string& filename);
+	explicit Loader(const std::filesystem::path &filename);
 
-	void load(const char* filename);
+	void load(const std::filesystem::path &filename);
 
 	std::shared_ptr<Graph> get_lookup_graph();
 	LocationsPtr get_locations() const {
