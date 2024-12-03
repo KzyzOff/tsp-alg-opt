@@ -3,18 +3,19 @@
 #include <iostream>
 #include <random>
 
+#include "Population.hpp"
 #include "types.hpp"
 
 using namespace tsp_t;
 
 class CrossOperator {
 public:
-	CrossOperator(IndividualPtrVec &population, std::mt19937 &rand_gen,
+	CrossOperator(Population &population, std::mt19937 &rand_gen,
 	              const unsigned int chosen_parent_count)
 		: population(population), rand_gen(rand_gen),
-		  pop_size(population.size()),
+		  pop_size(population.get_population().size()),
 		  chromosome_size(
-		                  population.at(0)->chromosome.
+		                  population.get_population().begin()->second.
 		                             size()
 		                 ),
 		  chosen_parent_count(chosen_parent_count) {}
@@ -22,7 +23,7 @@ public:
 	virtual std::pair<Individual, Individual> cross(const Individual &parent1, const Individual &parent2) = 0;
 
 protected:
-	IndividualPtrVec &population;
+	Population &population;
 	std::mt19937 &rand_gen;
 	const int pop_size;
 	const int chromosome_size;

@@ -4,8 +4,8 @@
 
 class TournamentSelector : public Selector {
 public:
-	TournamentSelector(IndividualPtrVec& population, std::mt19937& rand_gen);
+	TournamentSelector(Population& population, const Settings& settings, std::mt19937& rand_gen);
 
-	IndividualPtrVec select_n(unsigned int n) override;
+	std::vector<FlaggedIndividual> select_n(unsigned int n) override;
 
 };

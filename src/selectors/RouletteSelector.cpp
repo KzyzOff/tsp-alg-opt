@@ -4,10 +4,10 @@
 
 #include "constants.hpp"
 
-RouletteSelector::RouletteSelector(IndividualPtrVec &population, std::mt19937 &rand_gen)
+RouletteSelector::RouletteSelector(Population &population, std::mt19937 &rand_gen)
 	: Selector(population, rand_gen) {}
 
-IndividualPtrVec RouletteSelector::select_n(unsigned int n) {
+std::vector<Individual> RouletteSelector::select_n(unsigned int n) {
 	auto accumulator = [](float acc, const std::shared_ptr<Individual> i) {
 		return acc + i->fitness;
 	};

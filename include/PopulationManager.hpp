@@ -3,27 +3,23 @@
 #include <random>
 
 #include "types.hpp"
+#include "Loader.hpp"
 #include "Population.hpp"
 #include "selectors/Selector.hpp"
 #include "cross_operators/CrossOperator.hpp"
 
 using namespace tsp_t;
 
-// TODO: This class should manage flow of the algorithm
 // TODO: Extract update and stats calculations into Population class
 class PopulationManager {
 public:
-	PopulationManager(const Settings &settings, const LocationsPtr &locations);
-
-	void update_pop_fitness();
+	PopulationManager(const Settings &settings, Loader &loader);
 
 	void advance_population();
-
-	void mutate_population(MutationType mt);
+	void mutate_population();
 
 	FitnessStats calc_fitness_stats();
-
-	std::shared_ptr<const Individual> get_goat() const { return goat_individual; }
+	uint64_t get_fitness_update_count() const { return population.get_fitness_update_count(); }
 
 private:
 	const Settings& settings;
@@ -40,9 +36,6 @@ private:
 	std::unique_ptr<Selector> selector;
 	MutationType mut_type;
 
-	std::shared_ptr<Individual> goat_individual;
-
-	void mutate_inverse(Individual &individual);
-
-	void mutate_swap(Individual &individual);
+	void mutate_inverse(std::vector<int>& chromosome);
+	void mutate_swap(std::vector<int>& chromosome);
 };

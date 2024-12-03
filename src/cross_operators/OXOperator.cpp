@@ -2,7 +2,7 @@
 
 #include <set>
 
-OXOPerator::OXOPerator(IndividualPtrVec &population, std::mt19937 &rand_gen, const unsigned int chosen_parent_count)
+OXOPerator::OXOPerator(Population &population, std::mt19937 &rand_gen, const unsigned int chosen_parent_count)
 	: CrossOperator(population, rand_gen, chosen_parent_count) {
 }
 
@@ -23,27 +23,27 @@ std::pair<Individual, Individual> OXOPerator::cross(const Individual &parent1, c
 
 Individual OXOPerator::cross_parents(const Individual &parent1, const Individual &parent2,
                                      const int cut_start, const int cut_end) {
-	const std::set<int> used_genes(parent1.chromosome.begin() + cut_start, parent1.chromosome.begin() + cut_end);
+	const std::set<int> used_genes(parent1.second.begin() + cut_start, parent1.second.begin() + cut_end);
 	std::vector<int> remaining_genes;
 	remaining_genes.resize(chromosome_size - (cut_end - cut_start));
 	int remaining_idx = 0;
 	for ( int i = 0; i < chromosome_size; ++i ) {
-		if ( used_genes.contains(parent2.chromosome.at(i)) ) continue;
+		if ( used_genes.contains(parent2.second.at(i)) ) continue;
 
-		remaining_genes.at(remaining_idx) = parent2.chromosome.at(i);
+		remaining_genes.at(remaining_idx) = parent2.second.at(i);
 		++remaining_idx;
 	}
 
 	Individual offspring;
-	offspring.chromosome.reserve(chromosome_size);
+	offspring.second.reserve(chromosome_size);
 
 	for ( int i = 0; i < remaining_genes.size(); ++i ) {
 		if ( i == cut_start ) {
-			offspring.chromosome.insert(offspring.chromosome.end(), parent1.chromosome.begin() + cut_start,
-			                            parent1.chromosome.begin() + cut_end);
+			offspring.second.insert(offspring.second.end(), parent1.second.begin() + cut_start,
+			                            parent1.second.begin() + cut_end);
 		}
 
-		offspring.chromosome.push_back(remaining_genes.at(i));
+		offspring.second.push_back(remaining_genes.at(i));
 	}
 
 	return offspring;

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <optional>
 
 #include "Graph.hpp"
 #include "types.hpp"
@@ -14,14 +15,14 @@ public:
 
 	void load(const std::filesystem::path &filename);
 
-	std::shared_ptr<Graph> get_lookup_graph();
+	Graph get_lookup_graph();
 	LocationsPtr get_locations() const {
 		return std::make_shared<std::vector<Location>>(locations);
 	}
 
 private:
 	std::vector<Location> locations;
-	std::shared_ptr<Graph> lookup_graph = nullptr;
+	std::optional<Graph> lookup_graph = std::nullopt;
 
 	void init_lookup_graph();
 

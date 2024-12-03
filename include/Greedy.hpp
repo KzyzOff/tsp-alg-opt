@@ -3,24 +3,24 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <set>
 
 #include "Loader.hpp"
-
-struct Solution {
-	std::vector<int> path {};
-	float fitness = 0.f;
-};
+#include "types.hpp"
 
 class Greedy {
 public:
 	Greedy(std::shared_ptr<const std::vector<Location>> locations, std::shared_ptr<Graph> lookup_graph);
 
-	Solution get_best_solution();
+	Individual get_best_solution();
+
+	static void calc_solution_with_initial_chromosome(Individual &initial_individual, Loader &data_loader,
+	                                                  unsigned int start_idx);
+
+	static std::map<float, std::vector<int> > get_lookup_map(const std::vector<float> &graph_row,
+	                                                         const std::set<int> &visited_locations);
 
 private:
 	std::shared_ptr<const std::vector<Location>> locations;
 	std::shared_ptr<Graph> lookup_graph;
-
-	std::map<float, std::vector<int>> get_lookup_map(const std::vector<float>& graph_row, const std::vector<int>& visited_locations);
-
 };

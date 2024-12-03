@@ -42,12 +42,8 @@ namespace tsp_t
 		float mut_prob;
 		int pop_size;
 		int gen_count;
+		int elite_sz;
 		std::filesystem::path input_file;
-	};
-
-	struct Individual {
-		std::vector<int> chromosome;
-		float fitness = 0.f;
 	};
 
 	struct FitnessStats {
@@ -56,7 +52,6 @@ namespace tsp_t
 		float mean;
 	};
 
-	using IndividualPtr = std::shared_ptr<Individual>;
-	using IndividualPtrVec = std::vector<std::shared_ptr<Individual>>;
 	using LocationsPtr = std::shared_ptr<std::vector<Location>>;
+	using Individual = std::pair<float, std::vector<int>>;
 }

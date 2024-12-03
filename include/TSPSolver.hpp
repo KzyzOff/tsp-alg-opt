@@ -8,7 +8,7 @@ class TSPSolver {
 public:
 	explicit TSPSolver(const Settings& settings);
 
-	void solve_n_times(unsigned int n = 1, unsigned n_threads = 1);
+	void solve(uint64_t max_fitness_update_count, unsigned n_threads = 1);
 
 private:
 	const Settings &settings;

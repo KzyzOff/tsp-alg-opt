@@ -1,28 +1,37 @@
 #pragma once
 
 #include <random>
+#include <map>
 
+#include "Loader.hpp"
 #include "types.hpp"
 
 using namespace tsp_t;
 
-// TODO: change the way individuals are stored -> std::map<[fitness], std::vector<Individual>> for a quick lookup on start and on end of this collection
+// TODO: Add method for updating elite and method for returning just a pointer to current elite instead of recalculating it every get_n_best call
 class Population {
 public:
-	Population(unsigned int pop_size, InitType init_type, LocationsPtr locations, std::mt19937& rand_gen);
+	Population(unsigned int pop_size, InitType init_type, Loader &loader, std::mt19937 &rand_gen);
 
-	void update_fitness(Individual& individual);
+	float calc_fitness(const std::vector<int> &chromosome);
+	void swap_individuals(Individual &offspring, const Individual &parent);
 
-	IndividualPtrVec& get_population() { return population; }
+	uint64_t get_fitness_update_count() const { return fitness_update_count; }
+	std::multimap<float, std::vector<int> > &get_population() { return population; }
+	std::multimap<float, std::vector<int> > get_n_best(int n) const;
+
+	bool same_individuals(const Individual& i1, const Individual& i2) const;
 
 private:
-	std::mt19937& rand_gen;
+	bool is_initialized;
+	std::mt19937 &rand_gen;
+	Loader &loader;
 	const LocationsPtr locations;
-	IndividualPtrVec population;
+	std::multimap<float, std::vector<int> > population;
 
-	IndividualPtr goat;
+	uint64_t fitness_update_count;
 
 	void random_init(unsigned int pop_size);
-	void greedy_init(unsigned int pop_size);
 
+	// void greedy_init(unsigned int pop_size);
 };

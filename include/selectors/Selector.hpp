@@ -3,18 +3,25 @@
 #include <random>
 
 #include "types.hpp"
+#include "Population.hpp"
 
 using namespace tsp_t;
 
+struct FlaggedIndividual {
+	Individual i;
+	bool is_elite;
+};
+
 class Selector {
 public:
-	Selector(IndividualPtrVec& population, std::mt19937& rand_gen)
-		: population(population), rand_gen(rand_gen) {}
+	Selector(Population& population, const Settings& settings, std::mt19937& rand_gen)
+		: population(population), settings(settings), rand_gen(rand_gen) {}
 
-	virtual IndividualPtrVec select_n(unsigned int) = 0;
+	virtual std::vector<FlaggedIndividual> select_n(unsigned int) = 0;
 
 protected:
-	IndividualPtrVec& population;
+	Population& population;
+	const Settings& settings;
 	std::mt19937& rand_gen;
 
 };

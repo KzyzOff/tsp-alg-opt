@@ -27,13 +27,13 @@ void Loader::load(const std::filesystem::path &filename) {
 	}
 }
 
-std::shared_ptr<Graph> Loader::get_lookup_graph() {
+Graph Loader::get_lookup_graph() {
 	if ( ! lookup_graph ) {
-		lookup_graph = std::make_shared<Graph>(locations.size());
+		lookup_graph = Graph(locations.size());
 		init_lookup_graph();
 	}
 
-	return lookup_graph;
+	return lookup_graph.value();
 }
 
 void Loader::init_lookup_graph() {

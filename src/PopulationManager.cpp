@@ -7,29 +7,28 @@
 #include <set>
 #include <unordered_set>
 #include <functional>
-#include <list>
 #include <optional>
 
 #include "cross_operators/OXOperator.hpp"
 #include "cross_operators/PMXOperator.hpp"
 #include "selectors/TournamentSelector.hpp"
-#include "selectors/RouletteSelector.hpp"
+// #include "selectors/RouletteSelector.hpp"
 #include "utils.hpp"
 
-PopulationManager::PopulationManager(const Settings &settings, const LocationsPtr &locations)
+PopulationManager::PopulationManager(const Settings &settings, Loader &loader)
 	: settings(settings),
 	  cross_pop_count(settings.pop_size * settings.cross_prob),
 	  mut_pop_count(settings.pop_size * settings.cross_prob),
-	  chromosome_size(locations->size()),
+	  chromosome_size(loader.get_locations()->size()),
 	  rand_gen(rand_dev()),
-	  population(settings.pop_size, settings.init_t, locations, rand_gen),
+	  population(settings.pop_size, settings.init_t, loader, rand_gen),
 	  mut_type() {
 	switch ( settings.cross_t ) {
 		case CrossoverType::OX:
-			cross_operator = std::make_unique<OXOPerator>(population.get_population(), rand_gen, cross_pop_count);
+			cross_operator = std::make_unique<OXOPerator>(population, rand_gen, cross_pop_count);
 			break;
 		case CrossoverType::PMX:
-			cross_operator = std::make_unique<PMXOperator>(population.get_population(), rand_gen, cross_pop_count);
+			cross_operator = std::make_unique<PMXOperator>(population, rand_gen, cross_pop_count);
 			break;
 		case CrossoverType::NONE:
 			cross_operator = nullptr;
@@ -38,105 +37,115 @@ PopulationManager::PopulationManager(const Settings &settings, const LocationsPt
 
 	switch ( settings.sel_t ) {
 		case SelectionType::TOURNAMENT:
-			selector = std::make_unique<TournamentSelector>(population.get_population(), rand_gen);
+			selector = std::make_unique<TournamentSelector>(population, settings, rand_gen);
 			break;
 		case SelectionType::ROULETTE:
-			selector = std::make_unique<RouletteSelector>(population.get_population(), rand_gen);
+			// selector = std::make_unique<RouletteSelector>(population, rand_gen);
 			break;
-	}
-
-	goat_individual = *std::ranges::min_element(population.get_population(),
-	                                            [](const IndividualPtr &i1, const IndividualPtr &i2) {
-		                                            return i1->fitness < i2->fitness;
-	                                            });
-}
-
-// TODO: add precalculated lookup table for distances
-void PopulationManager::update_pop_fitness() {
-	for ( auto &individual : population.get_population() ) {
-		population.update_fitness(*individual);
 	}
 }
 
 FitnessStats PopulationManager::calc_fitness_stats() {
-	auto comparator = [](const std::shared_ptr<Individual> &i1, const std::shared_ptr<Individual> &i2) {
-		return i1->fitness < i2->fitness;
-	};
+	float best = population.get_population().begin()->first;
+	float worst = std::next(population.get_population().begin(), settings.pop_size - 1)->first;
+	float mean = 0.f;
 
-	auto accumulator = [](float acc, const std::shared_ptr<Individual> &i) {
-		return acc + i->fitness;
-	};
+	for ( const auto& [fitness, chromosome] : population.get_population() ) {
+		mean += fitness;
+	}
 
-	FitnessStats result {
-		.worst = std::max_element(population.get_population().begin(), population.get_population().end(), comparator)->
-		         get()->fitness,
-		.best = std::min_element(population.get_population().begin(), population.get_population().end(), comparator)->
-		        get()->fitness,
-		.mean = std::accumulate(population.get_population().begin(), population.get_population().end(), 1.f,
-		                        accumulator) / static_cast<float>(
-			        population.get_population().size())
-	};
+	mean /= (float)settings.pop_size;
 
-	return result;
+	return {worst, best, mean};
 }
 
 void PopulationManager::advance_population() {
 	if ( selector != nullptr && cross_operator != nullptr ) {
 		auto selected_parents = selector->select_n(cross_pop_count);
-		std::vector<std::shared_ptr<Individual> > children;
-		children.reserve(selected_parents.size());
+		// auto elite = population.get_n_best(settings.elite_sz);
+
+		// std::vector<Individual> parents2swap;
+		// parents2swap.reserve(cross_pop_count);
+		std::vector<Individual> children(cross_pop_count);
 		// Skips the last one if selected parents count from the population is odd
-		for ( int i = 1; i < selected_parents.size(); i += 2 ) {
-			auto [offspring1, offspring2] = cross_operator->cross(*selected_parents.at(i - 1), *selected_parents.at(i));
-			children.push_back(std::make_shared<Individual>(offspring1));
-			children.push_back(std::make_shared<Individual>(offspring2));
+		for ( int i = 1; i < cross_pop_count; i += 2 ) {
+			auto [offspring1, offspring2] = cross_operator->cross(selected_parents.at(i - 1).i, selected_parents.at(i).i);
+			offspring1.first = population.calc_fitness(offspring1.second);
+			offspring2.first = population.calc_fitness(offspring1.second);
+			children.at(i - 1) = offspring1;
+			children.at(i) = offspring1;
+
+			// bool is_p1_elite = false, is_p2_elite = false;
+			// for ( const auto& e : elite ) {
+			// 	if ( population.same_individuals(e, selected_parents.at(idx - 1).i) ) is_p1_elite = true;
+			// 	if ( population.same_individuals(e, selected_parents.at(idx).i) ) is_p2_elite = true;
+			// }
+			// if ( selected_parents.at(idx - 1).is_elite ) parents2swap.push_back(selected_parents.at(idx - 1).i);
+			// if ( selected_parents.at(idx).is_elite ) parents2swap.push_back(selected_parents.at(idx).i);
 		}
 
-		for ( size_t i = 0; i < children.size(); ++i ) {
-			population.update_fitness(*children.at(i));
-			selected_parents.at(i)->chromosome = children.at(i)->chromosome;
-			selected_parents.at(i)->fitness = children.at(i)->fitness;
+		int offspring_idx = 0;
+		for ( auto& parent : selected_parents ) {
+			if ( !parent.is_elite ) {
+				population.swap_individuals(children.at(offspring_idx), parent.i);
+				++offspring_idx;
+			}
 		}
+
+		// Adding remaining parents to swap vector
+		// TODO: Change selecting system or population representation, because this method iterates too many times on the individuals
+		// for ( ; idx <= cross_pop_count + settings.elite_sz; ++idx ) {
+		// 	bool is_elite = false;
+		// 	for ( const auto& e : elite ) {
+		// 		if ( population.same_individuals(e, selected_parents.at(idx - 1).i) )
+		// 			is_elite = true;
+		// 	}
+		// 	if ( !is_elite )
+		// 		parents2swap.push_back(selected_parents.at(idx - 1).i);
+		// }
+		//
+		// for ( int i = 0; i < cross_pop_count; ++i ) {
+		// 	population.swap_individuals(children.at(i), parents2swap.at(i));
+		// }
 	}
 
-	mutate_population(mut_type);
+	mutate_population();
 }
 
-void PopulationManager::mutate_population(MutationType mt) {
-	switch ( mt ) {
+void PopulationManager::mutate_population() {
+	switch ( settings.mut_t ) {
 		case MutationType::NONE:
 			break;
 
 		case MutationType::INVERSE: {
-			std::set<std::shared_ptr<Individual> > selected_individuals;
+			std::set<Individual> mutated_individuals;
+			std::set<Individual> selected_individuals;
 			std::uniform_int_distribution<> distribution(0, settings.pop_size - 1);
 
-			while ( selected_individuals.size() < mut_pop_count ) {
-				int index = distribution(rand_gen);
-				selected_individuals.insert(population.get_population().at(index));
-			}
-
-			for ( auto &i : selected_individuals ) {
-				mutate_inverse(*i);
-				population.update_fitness(*i);
+			while ( mutated_individuals.size() < mut_pop_count ) {
+				auto rand_individual = std::next(population.get_population().begin(), distribution(rand_gen));
+				mutate_inverse(rand_individual->second);
+				Individual mutated {
+					population.calc_fitness(rand_individual->second),
+					rand_individual->second
+				};
+				population.swap_individuals(mutated, *rand_individual);
+				mutated_individuals.insert(mutated);
 			}
 
 			break;
 		}
 
 		case MutationType::SWAP: {
-			static std::optional<std::vector<int>> indices;
-			if ( indices == std::nullopt ) {
-				indices = std::vector<int>(settings.pop_size);
-				for ( int i = 0; i < settings.pop_size; ++i ) {
-					indices->at(i) = i;
-				}
-			}
-
-			std::ranges::shuffle(*indices, rand_gen);
+			std::uniform_int_distribution<> distribution(0, settings.pop_size - 1);
 			for ( int i = 0; i < mut_pop_count; ++i ) {
-				mutate_swap(*population.get_population().at(i));
-				population.update_fitness(*population.get_population().at(i));
+				auto rand_individual = std::next(population.get_population().begin(), distribution(rand_gen));
+				mutate_swap(rand_individual->second);
+				Individual mutated {
+					population.calc_fitness(rand_individual->second),
+					rand_individual->second
+				};
+				population.swap_individuals(mutated, *rand_individual);
 			}
 
 			break;
@@ -144,7 +153,7 @@ void PopulationManager::mutate_population(MutationType mt) {
 	}
 }
 
-void PopulationManager::mutate_inverse(Individual &individual) {
+void PopulationManager::mutate_inverse(std::vector<int>& chromosome) {
 	std::uniform_int_distribution<> distribution(0, chromosome_size - 1);
 	int start = distribution(rand_gen);
 	int end = distribution(rand_gen);
@@ -156,16 +165,16 @@ void PopulationManager::mutate_inverse(Individual &individual) {
 	const int delta = end - start;
 	const int mid = delta / 2;
 	for ( int i = 0; i < mid; ++i ) {
-		std::swap(individual.chromosome.at(start + i), individual.chromosome.at(end - i));
+		std::swap(chromosome.at(start + i), chromosome.at(end - i));
 	}
 }
 
-void PopulationManager::mutate_swap(Individual &individual) {
+void PopulationManager::mutate_swap(std::vector<int>& chromosome) {
 	std::uniform_int_distribution<> distribution(0, chromosome_size - 1);
 	int first = distribution(rand_gen);
 	int second = distribution(rand_gen);
 	while ( first == second )
 		second = distribution(rand_gen);
 
-	std::swap(individual.chromosome.at(first), individual.chromosome.at(second));
+	std::swap(chromosome.at(first), chromosome.at(second));
 }
