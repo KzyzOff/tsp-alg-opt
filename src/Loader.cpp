@@ -13,9 +13,13 @@ Loader::Loader(const std::filesystem::path &filename) {
 void Loader::load(const std::filesystem::path &filename) {
 	std::ifstream file(DATASETS_PATH / filename);
 
+	std::regex pattern(
+		R"(^(\d+)\s+([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)\s+([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)\s*$)",
+		std::regex_constants::ECMAScript
+	);
+
 	std::string line;
 	std::smatch matches;
-	std::regex pattern(R"(^\d+ \d+\.\d+ \d+\.\d+\s*$)", std::regex_constants::ECMAScript);
 
 	while ( std::getline(file, line) ) {
 		if ( std::regex_match(line, matches, pattern) ) {
