@@ -24,6 +24,8 @@ private:
 	int n_columns{};
 	std::vector<std::string> row;
 
+	int flush_counter;
+
 	bool is_in_bounds(int col_index) const { return col_index < row.size(); }
 
 };

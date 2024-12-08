@@ -7,7 +7,8 @@
 
 CSVLogger::CSVLogger(const std::filesystem::path &filename, int n_columns)
 	: filepath(SIMULATION_RESULTS_PATH / filepath),
-	  n_columns(n_columns)
+	  n_columns(n_columns),
+	  flush_counter(0)
 {
 	set_col_number(n_columns);
 	set_output_file(filename);
@@ -35,6 +36,15 @@ void CSVLogger::commit_row() {
 	file << full_row.str();
 	row.clear();
 	row.resize(n_columns, "");
+
+	if ( file.bad() )
+		printf("File error occured!\n");
+
+	if ( flush_counter > 100 ) {
+		file.flush();
+		flush_counter = 0;
+	}
+	++flush_counter;
 }
 
 void CSVLogger::add(int col, const std::string& content) {
