@@ -7,7 +7,7 @@
 
 class CSVLogger {
 public:
-	CSVLogger() = default;
+	CSVLogger();
 	CSVLogger(const std::filesystem::path &filename, int n_columns);
 
 	void commit_row();
@@ -21,7 +21,7 @@ public:
 private:
 	std::filesystem::path filepath;
 	std::ofstream file;
-	int n_columns{};
+	int n_columns;
 	std::vector<std::string> row;
 
 	int flush_counter;

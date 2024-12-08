@@ -46,7 +46,6 @@ std::vector<Individual> TournamentSelector::select_n(const unsigned int n) {
 
 			return false;
 		});
-		// pop_left.erase(prune_iter);
 	}
 
 	// Select additional 'n_selected_elite' random individuals

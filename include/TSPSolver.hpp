@@ -11,12 +11,12 @@ public:
 	void solve(uint64_t max_fitness_update_count, int run_id);
 
 private:
-	const Settings &settings;
+	const Settings settings;
 	Loader data_loader;
 	PopulationManager pmgr;
 	CSVLogger logger;
 
-	void set_output_filename(const std::filesystem::path &filename, unsigned int n);
+	void set_output_filename(unsigned int n);
 	void log_stats_to_file(FitnessStats& stats, int generation_num);
 
 };

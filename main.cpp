@@ -1,18 +1,9 @@
 #include <thread>
 
+#include "constants.hpp"
 #include "utils.hpp"
 #include "types.hpp"
 #include "TSPSolver.hpp"
-
-void runSimulation(int id) {
-	std::cout << "Simulation " << id << " started on thread "
-			  << std::this_thread::get_id() << std::endl;
-
-	std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Simulate work
-
-	std::cout << "Simulation " << id << " finished on thread "
-			  << std::this_thread::get_id() << std::endl;
-}
 
 int main() {
 	const Settings settings {
@@ -25,7 +16,7 @@ int main() {
 		.pop_size = 800,
 		.gen_count = 10000,
 		.elite_sz = 30,
-		.input_file = std::filesystem::path("kroA100.tsp")
+		.input_file = std::filesystem::path("berlin52.tsp")
 	};
 
 	const int n_simulations = 10;
