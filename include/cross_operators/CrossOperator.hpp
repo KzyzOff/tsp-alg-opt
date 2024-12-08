@@ -15,8 +15,7 @@ public:
 		: population(population), rand_gen(rand_gen),
 		  pop_size(population.get_population().size()),
 		  chromosome_size(
-		                  population.get_population().begin()->second.
-		                             size()
+		                  population.get_population().begin()->second.chromosome.size()
 		                 ),
 		  chosen_parent_count(chosen_parent_count) {}
 

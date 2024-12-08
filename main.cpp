@@ -8,15 +8,15 @@ int main() {
 		.mut_t = MutationType::SWAP,
 		.sel_t = SelectionType::TOURNAMENT,
 		.cross_prob = .5f,
-		.mut_prob = .1f,
-		.pop_size = 1000,
+		.mut_prob = .2f,
+		.pop_size = 800,
 		.gen_count = 10000,
-		.elite_sz = 20,
+		.elite_sz = 30,
 		.input_file = std::filesystem::path("berlin52.tsp")
 	};
 
 	TSPSolver solver(settings);
-	solver.solve(std::pow(10, 4), settings.gen_count);
+	solver.solve(std::pow(10, 6), settings.gen_count);
 
 	return 0;
 }

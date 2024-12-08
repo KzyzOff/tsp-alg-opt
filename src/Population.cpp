@@ -1,13 +1,15 @@
 #include "Population.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <random>
 
 #include "utils.hpp"
 #include "Greedy.hpp"
 
-Population::Population(unsigned int pop_size, InitType init_type, Loader &loader, std::mt19937 &rand_gen)
+Population::Population(unsigned int pop_size, int elite_sz, InitType init_type, Loader &loader, std::mt19937 &rand_gen)
 	: is_initialized(false),
+	  elite_sz(elite_sz),
 	  rand_gen(rand_gen),
 	  loader(loader),
 	  locations(loader.get_locations()),
@@ -49,37 +51,46 @@ float Population::calc_fitness(const std::vector<int> &chromosome) {
 void Population::swap_individuals(Individual &offspring, const Individual &parent) {
 	auto [it, end] = population.equal_range(parent.first);
 	for ( ; it != population.end(); ++it ) {
-		if ( it->second == parent.second ) {
+		if ( it->second.chromosome == parent.second.chromosome ) {
 			population.erase(it);
 			break;
 		}
 	}
+
 	population.insert(offspring);
 }
 
 bool Population::same_individuals(const Individual &i1, const Individual &i2) const {
-	if ( i1.first == i2.first && i1.second == i2.second ) {
+	if ( i1.first == i2.first && i1.second.chromosome == i2.second.chromosome ) {
 		return true;
 	}
 
 	return false;
 }
 
-std::multimap<float, std::vector<int> > Population::get_n_best(const int n) const {
-	if ( n > population.size() )
-		return {};
-
-	std::multimap<float, std::vector<int> > result;
-	int i = 0;
-	for ( const auto &[fitness, chromosome] : population ) {
-		result.insert({fitness, chromosome});
-		if ( i == n - 1 )
-			break;
-		++i;
+void Population::update_elite() {
+	int current_count = 0;
+	for ( auto& individual : population ) {
+		individual.second.is_elite = current_count < elite_sz;
+		++current_count;
 	}
-
-	return result;
 }
+
+// std::multimap<float, std::vector<int> > Population::get_n_best(const int n) const {
+// 	if ( n > population.size() )
+// 		return {};
+//
+// 	std::multimap<float, std::vector<int> > result;
+// 	int i = 0;
+// 	for ( const auto &[fitness, chromosome] : population ) {
+// 		result.insert({fitness, chromosome});
+// 		if ( i == n - 1 )
+// 			break;
+// 		++i;
+// 	}
+//
+// 	return result;
+// }
 
 void Population::random_init(unsigned int pop_size) {
 	population.clear();
@@ -92,8 +103,11 @@ void Population::random_init(unsigned int pop_size) {
 		std::ranges::shuffle(chromosome, rand_gen);
 		float fitness = calc_fitness(chromosome);
 
-		population.insert({fitness, chromosome});
+		assert(("[random_init] Empty chromosome or 0.f fitness value!", !chromosome.size() != pop_size || fitness == 0.f));
+		population.insert({fitness, {chromosome, false}});
 	}
+
+	update_elite();
 }
 
 /**

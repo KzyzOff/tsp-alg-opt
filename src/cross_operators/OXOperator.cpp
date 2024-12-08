@@ -15,6 +15,9 @@ std::pair<Individual, Individual> OXOPerator::cross(const Individual &parent1, c
 	if ( cut_start > cut_end )
 		std::swap(cut_start, cut_end);
 
+	if ( parent1.first == 0 || parent2.first == 0 )
+		std::cout << "cross operator - wrong fitness\n";
+
 	auto offspring1 = cross_parents(parent1, parent2, cut_start, cut_end);
 	auto offspring2 = cross_parents(parent2, parent1, cut_start, cut_end);
 
@@ -23,27 +26,29 @@ std::pair<Individual, Individual> OXOPerator::cross(const Individual &parent1, c
 
 Individual OXOPerator::cross_parents(const Individual &parent1, const Individual &parent2,
                                      const int cut_start, const int cut_end) {
-	const std::set<int> used_genes(parent1.second.begin() + cut_start, parent1.second.begin() + cut_end);
+	const std::set<int> used_genes(parent1.second.chromosome.begin() + cut_start,
+	                               parent1.second.chromosome.begin() + cut_end);
 	std::vector<int> remaining_genes;
 	remaining_genes.resize(chromosome_size - (cut_end - cut_start));
 	int remaining_idx = 0;
 	for ( int i = 0; i < chromosome_size; ++i ) {
-		if ( used_genes.contains(parent2.second.at(i)) ) continue;
+		if ( used_genes.contains(parent2.second.chromosome.at(i)) ) continue;
 
-		remaining_genes.at(remaining_idx) = parent2.second.at(i);
+		remaining_genes.at(remaining_idx) = parent2.second.chromosome.at(i);
 		++remaining_idx;
 	}
 
 	Individual offspring;
-	offspring.second.reserve(chromosome_size);
+	offspring.second.chromosome.reserve(chromosome_size);
 
 	for ( int i = 0; i < remaining_genes.size(); ++i ) {
 		if ( i == cut_start ) {
-			offspring.second.insert(offspring.second.end(), parent1.second.begin() + cut_start,
-			                            parent1.second.begin() + cut_end);
+			offspring.second.chromosome.insert(offspring.second.chromosome.end(),
+			                                   parent1.second.chromosome.begin() + cut_start,
+			                                   parent1.second.chromosome.begin() + cut_end);
 		}
 
-		offspring.second.push_back(remaining_genes.at(i));
+		offspring.second.chromosome.push_back(remaining_genes.at(i));
 	}
 
 	return offspring;

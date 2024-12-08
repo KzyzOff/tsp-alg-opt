@@ -13,29 +13,29 @@ TSPSolver::TSPSolver(const Settings &settings)
 
 void TSPSolver::solve(const uint64_t max_fitness_update_count, const unsigned int n_threads) {
 	FitnessStats stats {};
-	set_output_filename(settings.input_file.c_str(), 0);
+	set_output_filename(settings.input_file.c_str(), 2);
 	log_stats_to_file(stats, 0);
 	int gen_number = 1;
 	uint64_t current_fitness_update_count = 0;
-	while ( current_fitness_update_count < max_fitness_update_count || gen_number <= settings.gen_count ) {
+	while ( current_fitness_update_count < max_fitness_update_count && gen_number <= settings.gen_count ) {
 		pmgr.advance_population();
 		stats = pmgr.calc_fitness_stats();
 		log_stats_to_file(stats, gen_number);
-		printf("[Generation %i] Best: %f, Mean: %f, Worst: %f\n", gen_number, stats.best, stats.mean, stats.worst);
-		// current_fitness_update_count = pmgr.get_fitness_update_count();
-		// printf("Current update fitness count is: %llu\n", current_fitness_update_count);
+		printf("[Generation %i] Best: %f, Mean: %f, Worst: %f; fitness_calc count: %llu\n",
+		       gen_number, stats.best, stats.mean, stats.worst, current_fitness_update_count);
 		++gen_number;
+		current_fitness_update_count = pmgr.get_fitness_update_count();
 	}
 
-	// auto best_solution = pmgr.get_goat();
-	// std::ostringstream best_chromosome;
-	// for ( int i = 0; i < best_solution->chromosome.size(); ++i ) {
-	// 	best_chromosome << best_solution->chromosome.at(i);
-	// 	if ( i != best_solution->chromosome.size() - 1 )
-	// 		best_chromosome << "->";
-	// }
-	//
-	// printf("Best solution chromosome: %s", best_chromosome.str().c_str());
+	const auto [fitness, individual] = pmgr.get_goat();
+	std::ostringstream best_chromosome;
+	for ( int i = 0; i < individual.chromosome.size(); ++i ) {
+		best_chromosome << individual.chromosome.at(i);
+		if ( i != individual.chromosome.size() - 1 )
+			best_chromosome << "->";
+	}
+
+	printf("Best solution chromosome: %s\nBest fitness: %f", best_chromosome.str().c_str(), fitness);
 }
 
 void TSPSolver::set_output_filename(const std::filesystem::path &filename, unsigned int n) {

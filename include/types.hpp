@@ -52,6 +52,33 @@ namespace tsp_t
 		float mean;
 	};
 
+	struct EliteFlaggedChromosome {
+		std::vector<int> chromosome;
+		bool is_elite;
+
+		// bool operator==(const EliteFlaggedChromosome& efc) {
+		// 	return this->chromosome == efc.chromosome;
+		// }
+	};
+
 	using LocationsPtr = std::shared_ptr<std::vector<Location>>;
-	using Individual = std::pair<float, std::vector<int>>;
+	using Individual = std::pair<float, EliteFlaggedChromosome>;
+
+	inline bool operator<(const Individual& lhs, const Individual& rhs) {
+		if (lhs.first != rhs.first) {
+			return lhs.first < rhs.first;
+		}
+
+		return lhs.second.chromosome < rhs.second.chromosome;
+	}
+
+	// struct IndividualComparator {
+	// 	bool operator<(const Individual& lhs, const Individual& rhs) const {
+	// 		if (lhs.first != rhs.first) {
+	// 			return lhs.first < rhs.first;
+	// 		}
+	//
+	// 		return lhs.second.chromosome < rhs.second.chromosome;
+	// 	}
+	// };
 }

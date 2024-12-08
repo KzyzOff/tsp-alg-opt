@@ -20,6 +20,7 @@ public:
 
 	FitnessStats calc_fitness_stats();
 	uint64_t get_fitness_update_count() const { return population.get_fitness_update_count(); }
+	Individual get_goat() const { return goat; }
 
 private:
 	const Settings& settings;
@@ -30,6 +31,8 @@ private:
 
 	std::random_device rand_dev;
 	std::mt19937 rand_gen;
+
+	Individual goat;
 
 	Population population;
 	std::unique_ptr<CrossOperator> cross_operator;

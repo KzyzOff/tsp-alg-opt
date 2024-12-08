@@ -19,13 +19,13 @@ std::pair<Individual, Individual> PMXOperator::cross(const Individual &parent1, 
 
 	Individual offspring1;
 	Individual offspring2;
-	offspring1.second.resize(chromosome_size);
-	offspring2.second.resize(chromosome_size);
-	std::ranges::fill(offspring1.second, -1);
-	std::ranges::fill(offspring2.second, -1);
+	offspring1.second.chromosome.resize(chromosome_size);
+	offspring2.second.chromosome.resize(chromosome_size);
+	std::ranges::fill(offspring1.second.chromosome, -1);
+	std::ranges::fill(offspring2.second.chromosome, -1);
 	for ( int i = cut_start; i < cut_end; ++i ) {
-		offspring1.second.at(i) = parent1.second.at(i);
-		offspring2.second.at(i) = parent2.second.at(i);
+		offspring1.second.chromosome.at(i) = parent1.second.chromosome.at(i);
+		offspring2.second.chromosome.at(i) = parent2.second.chromosome.at(i);
 	}
 
 	map_remaining_pmx(parent1, parent2, offspring1, cut_start, cut_end);
@@ -42,18 +42,18 @@ void PMXOperator::map_remaining_pmx(const Individual &parent1, const Individual 
 	std::set<int> used_genes;
 
 	for ( int i = cut_start; i < cut_end; ++i ) {
-		parent1_to_parent2_map.insert({parent1.second.at(i), parent2.second.at(i)});
-		used_genes.insert(parent1.second.at(i));
+		parent1_to_parent2_map.insert({parent1.second.chromosome.at(i), parent2.second.chromosome.at(i)});
+		used_genes.insert(parent1.second.chromosome.at(i));
 	}
 
 	for ( int i = 0; i < chromosome_size; ++i ) {
-		if ( offspring.second.at(i) != -1 ) continue;
+		if ( offspring.second.chromosome.at(i) != -1 ) continue;
 
-		int gene_to_insert = parent2.second.at(i);
+		int gene_to_insert = parent2.second.chromosome.at(i);
 		while ( used_genes.contains(gene_to_insert) ) {
 			gene_to_insert = parent1_to_parent2_map.at(gene_to_insert);
 		}
-		offspring.second.at(i) = gene_to_insert;
+		offspring.second.chromosome.at(i) = gene_to_insert;
 		used_genes.insert(gene_to_insert);
 	}
 }

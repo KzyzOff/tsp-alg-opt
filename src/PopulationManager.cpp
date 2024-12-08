@@ -13,6 +13,8 @@
 #include "cross_operators/PMXOperator.hpp"
 #include "selectors/TournamentSelector.hpp"
 // #include "selectors/RouletteSelector.hpp"
+#include <cassert>
+
 #include "utils.hpp"
 
 PopulationManager::PopulationManager(const Settings &settings, Loader &loader)
@@ -21,7 +23,7 @@ PopulationManager::PopulationManager(const Settings &settings, Loader &loader)
 	  mut_pop_count(settings.pop_size * settings.cross_prob),
 	  chromosome_size(loader.get_locations()->size()),
 	  rand_gen(rand_dev()),
-	  population(settings.pop_size, settings.init_t, loader, rand_gen),
+	  population(settings.pop_size, settings.elite_sz, settings.init_t, loader, rand_gen),
 	  mut_type() {
 	switch ( settings.cross_t ) {
 		case CrossoverType::OX:
@@ -43,6 +45,8 @@ PopulationManager::PopulationManager(const Settings &settings, Loader &loader)
 			// selector = std::make_unique<RouletteSelector>(population, rand_gen);
 			break;
 	}
+
+	goat = *population.get_population().begin();
 }
 
 FitnessStats PopulationManager::calc_fitness_stats() {
@@ -62,54 +66,37 @@ FitnessStats PopulationManager::calc_fitness_stats() {
 void PopulationManager::advance_population() {
 	if ( selector != nullptr && cross_operator != nullptr ) {
 		auto selected_parents = selector->select_n(cross_pop_count);
-		// auto elite = population.get_n_best(settings.elite_sz);
-
-		// std::vector<Individual> parents2swap;
-		// parents2swap.reserve(cross_pop_count);
 		std::vector<Individual> children(cross_pop_count);
+
+		// TODO: fix bug with random individual being not initialized or smth
+
 		// Skips the last one if selected parents count from the population is odd
 		for ( int i = 1; i < cross_pop_count; i += 2 ) {
-			auto [offspring1, offspring2] = cross_operator->cross(selected_parents.at(i - 1).i, selected_parents.at(i).i);
-			offspring1.first = population.calc_fitness(offspring1.second);
-			offspring2.first = population.calc_fitness(offspring1.second);
+			auto [offspring1, offspring2] = cross_operator->cross(selected_parents.at(i - 1), selected_parents.at(i));
+			offspring1.first = population.calc_fitness(offspring1.second.chromosome);
+			offspring2.first = population.calc_fitness(offspring1.second.chromosome);
 			children.at(i - 1) = offspring1;
 			children.at(i) = offspring1;
 
-			// bool is_p1_elite = false, is_p2_elite = false;
-			// for ( const auto& e : elite ) {
-			// 	if ( population.same_individuals(e, selected_parents.at(idx - 1).i) ) is_p1_elite = true;
-			// 	if ( population.same_individuals(e, selected_parents.at(idx).i) ) is_p2_elite = true;
-			// }
-			// if ( selected_parents.at(idx - 1).is_elite ) parents2swap.push_back(selected_parents.at(idx - 1).i);
-			// if ( selected_parents.at(idx).is_elite ) parents2swap.push_back(selected_parents.at(idx).i);
+			assert(("[advance_population] Fitness value cannot be 0.f at this point!", selected_parents.at(i).first != 0.f));
+			assert(("[advance_population] Fitness value cannot be 0.f at this point!", selected_parents.at(i - 1).first != 0.f));
 		}
 
 		int offspring_idx = 0;
 		for ( auto& parent : selected_parents ) {
-			if ( !parent.is_elite ) {
-				population.swap_individuals(children.at(offspring_idx), parent.i);
+			if ( !parent.second.is_elite ) {
+				population.swap_individuals(children.at(offspring_idx), parent);
 				++offspring_idx;
 			}
 		}
-
-		// Adding remaining parents to swap vector
-		// TODO: Change selecting system or population representation, because this method iterates too many times on the individuals
-		// for ( ; idx <= cross_pop_count + settings.elite_sz; ++idx ) {
-		// 	bool is_elite = false;
-		// 	for ( const auto& e : elite ) {
-		// 		if ( population.same_individuals(e, selected_parents.at(idx - 1).i) )
-		// 			is_elite = true;
-		// 	}
-		// 	if ( !is_elite )
-		// 		parents2swap.push_back(selected_parents.at(idx - 1).i);
-		// }
-		//
-		// for ( int i = 0; i < cross_pop_count; ++i ) {
-		// 	population.swap_individuals(children.at(i), parents2swap.at(i));
-		// }
 	}
 
 	mutate_population();
+	population.update_elite();
+
+	const auto [fitness, chromosome] = *population.get_population().begin();
+	if ( fitness < goat.first )
+		goat = { fitness, chromosome };
 }
 
 void PopulationManager::mutate_population() {
@@ -124,9 +111,9 @@ void PopulationManager::mutate_population() {
 
 			while ( mutated_individuals.size() < mut_pop_count ) {
 				auto rand_individual = std::next(population.get_population().begin(), distribution(rand_gen));
-				mutate_inverse(rand_individual->second);
+				mutate_inverse(rand_individual->second.chromosome);
 				Individual mutated {
-					population.calc_fitness(rand_individual->second),
+					population.calc_fitness(rand_individual->second.chromosome),
 					rand_individual->second
 				};
 				population.swap_individuals(mutated, *rand_individual);
@@ -140,9 +127,9 @@ void PopulationManager::mutate_population() {
 			std::uniform_int_distribution<> distribution(0, settings.pop_size - 1);
 			for ( int i = 0; i < mut_pop_count; ++i ) {
 				auto rand_individual = std::next(population.get_population().begin(), distribution(rand_gen));
-				mutate_swap(rand_individual->second);
+				mutate_swap(rand_individual->second.chromosome);
 				Individual mutated {
-					population.calc_fitness(rand_individual->second),
+					population.calc_fitness(rand_individual->second.chromosome),
 					rand_individual->second
 				};
 				population.swap_individuals(mutated, *rand_individual);
