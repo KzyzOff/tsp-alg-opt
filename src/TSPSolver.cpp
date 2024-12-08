@@ -4,16 +4,16 @@
 
 #include "constants.hpp"
 
-TSPSolver::TSPSolver(const Settings &settings)
+TSPSolver::TSPSolver(const Settings settings)
 	: settings(settings),
 	  data_loader(settings.input_file),
 	  pmgr(settings, data_loader) {
 	logger.set_col_number(5);
 }
 
-void TSPSolver::solve(const uint64_t max_fitness_update_count, const unsigned int n_threads) {
+void TSPSolver::solve(const uint64_t max_fitness_update_count, int run_id) {
 	FitnessStats stats {};
-	set_output_filename(settings.input_file.c_str(), 2);
+	set_output_filename(settings.input_file.c_str(), run_id);
 	log_stats_to_file(stats, 0);
 	int gen_number = 1;
 	uint64_t current_fitness_update_count = 0;
@@ -21,8 +21,8 @@ void TSPSolver::solve(const uint64_t max_fitness_update_count, const unsigned in
 		pmgr.advance_population();
 		stats = pmgr.calc_fitness_stats();
 		log_stats_to_file(stats, gen_number);
-		printf("[Generation %i] Best: %f, Mean: %f, Worst: %f; fitness_calc count: %llu\n",
-		       gen_number, stats.best, stats.mean, stats.worst, current_fitness_update_count);
+		// printf("[Generation %i] Best: %f, Mean: %f, Worst: %f; fitness_calc count: %llu\n",
+		//        gen_number, stats.best, stats.mean, stats.worst, current_fitness_update_count);
 		++gen_number;
 		current_fitness_update_count = pmgr.get_fitness_update_count();
 	}
@@ -40,7 +40,10 @@ void TSPSolver::solve(const uint64_t max_fitness_update_count, const unsigned in
 
 void TSPSolver::set_output_filename(const std::filesystem::path &filename, unsigned int n) {
 	std::ostringstream output_filename;
-	output_filename << filename.stem().string() << "_p" << settings.pop_size
+	output_filename
+			// << filename.stem().string()
+			<< "TEST"
+			<< "_p" << settings.pop_size
 			<< "_esz" << settings.elite_sz
 			<< "_tsz" << TOURNAMENT_SIZE
 			<< "_px" << static_cast<char>(settings.cross_t) << '-' << settings.cross_prob
