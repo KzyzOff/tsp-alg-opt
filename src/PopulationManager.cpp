@@ -68,8 +68,6 @@ void PopulationManager::advance_population() {
 		auto selected_parents = selector->select_n(cross_pop_count);
 		std::vector<Individual> children(cross_pop_count);
 
-		// TODO: fix bug with random individual being not initialized or smth
-
 		// Skips the last one if selected parents count from the population is odd
 		for ( int i = 1; i < cross_pop_count; i += 2 ) {
 			auto [offspring1, offspring2] = cross_operator->cross(selected_parents.at(i - 1), selected_parents.at(i));

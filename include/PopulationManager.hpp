@@ -10,7 +10,6 @@
 
 using namespace tsp_t;
 
-// TODO: Extract update and stats calculations into Population class
 class PopulationManager {
 public:
 	PopulationManager(const Settings &settings, Loader &loader);

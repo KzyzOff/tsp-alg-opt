@@ -55,10 +55,6 @@ namespace tsp_t
 	struct EliteFlaggedChromosome {
 		std::vector<int> chromosome;
 		bool is_elite;
-
-		// bool operator==(const EliteFlaggedChromosome& efc) {
-		// 	return this->chromosome == efc.chromosome;
-		// }
 	};
 
 	using LocationsPtr = std::shared_ptr<std::vector<Location>>;
@@ -71,14 +67,4 @@ namespace tsp_t
 
 		return lhs.second.chromosome < rhs.second.chromosome;
 	}
-
-	// struct IndividualComparator {
-	// 	bool operator<(const Individual& lhs, const Individual& rhs) const {
-	// 		if (lhs.first != rhs.first) {
-	// 			return lhs.first < rhs.first;
-	// 		}
-	//
-	// 		return lhs.second.chromosome < rhs.second.chromosome;
-	// 	}
-	// };
 }

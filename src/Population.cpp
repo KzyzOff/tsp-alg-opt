@@ -76,22 +76,6 @@ void Population::update_elite() {
 	}
 }
 
-// std::multimap<float, std::vector<int> > Population::get_n_best(const int n) const {
-// 	if ( n > population.size() )
-// 		return {};
-//
-// 	std::multimap<float, std::vector<int> > result;
-// 	int i = 0;
-// 	for ( const auto &[fitness, chromosome] : population ) {
-// 		result.insert({fitness, chromosome});
-// 		if ( i == n - 1 )
-// 			break;
-// 		++i;
-// 	}
-//
-// 	return result;
-// }
-
 void Population::random_init(unsigned int pop_size) {
 	population.clear();
 	for ( size_t i = 0; i < pop_size; ++i ) {

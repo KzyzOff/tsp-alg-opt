@@ -8,7 +8,6 @@
 
 using namespace tsp_t;
 
-// TODO: Add method for updating elite and method for returning just a pointer to current elite instead of recalculating it every get_n_best call
 class Population {
 public:
 	Population(unsigned int pop_size, int elite_sz, InitType init_type, Loader &loader, std::mt19937 &rand_gen);
