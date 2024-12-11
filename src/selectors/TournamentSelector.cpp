@@ -25,7 +25,7 @@ std::vector<Individual> TournamentSelector::select_n(const unsigned int n) {
 		auto distribution = std::uniform_int_distribution<>(0, settings.pop_size - result.size() - 1);
 		std::set<Individual> round_selected;
 
-		while ( round_selected.size() < TOURNAMENT_SIZE ) {
+		while ( round_selected.size() < settings.tour_sz ) {
 			int rand_idx = distribution(rand_gen);
 			auto rand_individual = *std::next(pop_left.begin(), rand_idx);
 			round_selected.insert(rand_individual);

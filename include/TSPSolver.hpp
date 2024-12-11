@@ -8,7 +8,7 @@ class TSPSolver {
 public:
 	explicit TSPSolver(Settings settings);
 
-	void solve(uint64_t max_fitness_update_count, int run_id);
+	Individual solve(uint64_t max_fitness_update_count, int run_id);
 
 private:
 	const Settings settings;

@@ -43,6 +43,7 @@ namespace tsp_t
 		int pop_size;
 		int gen_count;
 		int elite_sz;
+		int tour_sz;
 		std::filesystem::path input_file;
 	};
 
