@@ -48,7 +48,7 @@ std::string stringify_settings(const Settings& settings) {
 	return output_filename.str();
 }
 
-void json_add_best_chormosome(const std::filesystem::path& filepath, const std::string& settings_str, const std::vector<int>& chromosome) {
+void json_add_best(const std::filesystem::path& filepath, const std::string& settings_str, const Individual& best) {
 	std::filesystem::path full_filepath(filepath);
 	full_filepath += "/best_chromosomes.json";
 	std::ifstream input_file(full_filepath);
@@ -70,7 +70,8 @@ void json_add_best_chormosome(const std::filesystem::path& filepath, const std::
 		return;
 	}
 
-	json_data[settings_str] = vec2str(chromosome, ", ");
+	json_data[settings_str]["fitness"] = best.first;
+	json_data[settings_str]["chromosome"] = vec2str(best.second.chromosome, ", ");
 
 	std::ofstream output_file(full_filepath);
 	output_file << json_data.dump(4);

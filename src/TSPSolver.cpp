@@ -54,15 +54,6 @@ void TSPSolver::set_output_filename(unsigned int n) {
 		}
 	}
 
-	// std::ostringstream output_filename;
-	//	// output_filename
-	//	// 		<< "p" << settings.pop_size
-	//	// 		<< "_esz" << settings.elite_sz
-	//	// 		<< "_tsz" << settings.tour_sz
-	//	// 		<< "_px" << static_cast<char>(settings.cross_t) << '-' << settings.cross_prob
-	//	// 		<< "_pm" << static_cast<char>(settings.mut_t) << '-' << settings.mut_prob
-	//	// 		<< "_n" << n << ".csv";
-
 	std::string filename = stringify_settings(settings);
 	filename.append("_n")
 	        .append(std::to_string(n))

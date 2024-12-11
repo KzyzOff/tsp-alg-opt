@@ -12,7 +12,7 @@ int main() {
 		.cross_t = CrossoverType::PMX,
 		.mut_t = MutationType::SWAP,
 		.sel_t = SelectionType::TOURNAMENT,
-		.cross_prob = .6f,
+		.cross_prob = .4f,
 		.mut_prob = .3f,
 		.pop_size = 1000,
 		.gen_count = 10000,
@@ -64,9 +64,9 @@ int main() {
 			current_best = individual;
 	}
 
-	json_add_best_chormosome(std::filesystem::path(SIMULATION_RESULTS_PATH) / settings.input_file.stem(),
+	json_add_best(std::filesystem::path(SIMULATION_RESULTS_PATH) / settings.input_file.stem(),
 							 stringify_settings(settings),
-	                         current_best.second.chromosome);
+	                         current_best);
 
 	return 0;
 }

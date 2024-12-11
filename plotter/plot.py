@@ -75,11 +75,8 @@ def process_sims():
 
         for filename in unique_files:
             base_filename = output_dir + filename
-            averaged, best = average_results(current_path + '/' + filename)
+            averaged, _ = average_results(current_path + '/' + filename)
             averaged.to_csv(base_filename + '_av.csv', sep=';', index=False, header=None)
-
-            with open(output_dir + 'best_results.txt', 'a') as file:
-                file.writelines(f'{filename}: {best}\n')
                 
             plot_results(averaged, dir, base_filename)
 

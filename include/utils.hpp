@@ -13,4 +13,4 @@ tsp_t::Individual mt_run(tsp_t::Settings settings, int id);
 
 std::string stringify_settings(const tsp_t::Settings& settings);
 
-void json_add_best_chormosome(const std::filesystem::path& filepath, const std::string& settings_str, const std::vector<int>& chromosome);
+void json_add_best(const std::filesystem::path& filepath, const std::string& settings_str, const tsp_t::Individual& best);
