@@ -6,20 +6,50 @@
 #include "types.hpp"
 #include "TSPSolver.hpp"
 
+#include "JSONBatchSimulator.hpp"
+
 int main() {
+	bool batch = true;
+
+	if ( batch ) {
+		const std::filesystem::path file("./recalculation.json");
+		JSONBatchSimulator batch_simulator(file);
+		// batch_simulator.solve_dataset("berlin52.tsp");
+		// batch_simulator.solve_dataset("berlin_modified.tsp");
+		// batch_simulator.solve_dataset("kroA100.tsp");
+		// batch_simulator.solve_dataset("kroA150.tsp");
+		batch_simulator.solve_dataset("fl417.tsp");
+		batch_simulator.solve_dataset("ali535.tsp");
+		batch_simulator.solve_dataset("gr666.tsp");
+
+		return 0;
+	}
+
+	namespace fs = std::filesystem;
+
 	const Settings settings {
 		.init_t = InitType::RANDOM,
-		.cross_t = CrossoverType::PMX,
-		.mut_t = MutationType::SWAP,
+		.cross_t = CrossoverType::OX,
+		.mut_t = MutationType::INVERSE,
 		.sel_t = SelectionType::TOURNAMENT,
 		.cross_prob = .4f,
-		.mut_prob = .3f,
-		.pop_size = 1000,
-		.gen_count = 10000,
-		.elite_sz = 5,
-		.tour_sz = 5,
-		.input_file = std::filesystem::path("berlin_modified.tsp")
+		.mut_prob = .5f,
+		.pop_size = 2000,
+		.elite_sz = 200,
+		.tour_sz = 200,
+		.input_file = fs::path("kroA100.tsp")
 	};
+	int max_fitness_update_count = static_cast<int>(std::pow(10, 6));
+	// int max_fitness_update_count = static_cast<int>(2 * std::pow(10, 6));
+
+	// Skip the calculations if specified settings are already calculated
+	fs::path resulting_filepath(SIMULATION_RESULTS_PATH / settings.input_file.stem());
+	resulting_filepath += "/" + stringify_settings(settings) + "_n0.csv";
+
+	if ( fs::exists(resulting_filepath) ) {
+		printf("Sepcified settings are already calculated - skipping.\n");
+		return 1;
+	}
 
 	const int n_simulations = 10;
 	const int n_threads = std::thread::hardware_concurrency();
@@ -32,15 +62,13 @@ int main() {
 	auto start_timestamp = std::chrono::steady_clock::now();
 
 	for ( int i = 0; i < n_simulations; ++i ) {
-		threads.emplace_back([&, i]() {
-			Individual result = mt_run(settings, i);
+		threads.emplace_back([&, max_fitness_update_count, i]() {
+			Individual result = mt_run(settings, max_fitness_update_count, i);
 			{
 				std::lock_guard lock(results_mutex);
 				results[i] = result;
 			}
 		});
-
-		threads.emplace_back(mt_run, settings, i);
 
 		if ( threads.size() >= n_threads ) {
 			for ( auto &thread : threads ) {
@@ -65,8 +93,8 @@ int main() {
 	}
 
 	json_add_best(std::filesystem::path(SIMULATION_RESULTS_PATH) / settings.input_file.stem(),
-							 stringify_settings(settings),
-	                         current_best);
+	              stringify_settings(settings),
+	              current_best);
 
 	return 0;
 }

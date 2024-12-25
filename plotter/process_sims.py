@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import re
 
+CURRENT_FILE = 'fl417'
 RESULTS_PATH = '../simulation_results/'
 
 OPTIMAL = {
@@ -24,10 +25,14 @@ def average_results(filename: str):
         data_frames.append(df)
 
     combined_data = pd.concat(data_frames)
-    best_result = combined_data['best'].min()
-    averaged_data = combined_data.groupby('generation', as_index=False).mean()
 
-    return (averaged_data, best_result)
+    aggregated = combined_data.groupby('generation').agg(
+        best=('best', 'min'),
+        mean=('best', 'mean'),
+        worst=('best', 'max')
+    ).reset_index()
+
+    return aggregated
 
 
 def plot_results(data, dataset_name: str, output_path):
@@ -42,11 +47,14 @@ def plot_results(data, dataset_name: str, output_path):
 
     ymin = data['best'].min()
     if dataset_name in OPTIMAL.keys():
-        plt.plot(data['generation'], [OPTIMAL[dataset_name] for _ in data['generation']], '--', label='Optimal')
+        plt.axhline(y = OPTIMAL[dataset_name], color='r', linestyle='--', label='Optimal')
         ymin = OPTIMAL[dataset_name]
 
-    plt.ylim(ymin * 0.9, data['worst'].max() * 1.1)
-    plt.xlim(0, data['generation'].max())
+    try:
+        plt.ylim(ymin * 0.9, data['worst'].max() * 1.1)
+        plt.xlim(0, data['generation'].max())
+    except ValueError:
+        print(f'Wrong data when trying to save to file: {output_path}')
 
     plt.legend(loc='upper right')
     plt.grid(True)
@@ -60,6 +68,9 @@ def process_sims():
 
     sim_results_dirs = os.listdir(RESULTS_PATH)
     for dir in sim_results_dirs:
+        # if not CURRENT_FILE == dir:
+        #     continue
+
         current_path = RESULTS_PATH + dir
         output_dir = current_path + '/aggregated/'
         if not os.path.exists(output_dir):
@@ -67,7 +78,7 @@ def process_sims():
 
         unique_files = set()
         for filename in os.listdir(RESULTS_PATH + dir):
-            if os.path.isdir(current_path + '/' + filename):
+            if os.path.isdir(current_path + '/' + filename) or not filename.endswith('.csv'):
                 continue
 
             matched = suffix_pattern.match(filename).group(1)
@@ -75,10 +86,10 @@ def process_sims():
 
         for filename in unique_files:
             base_filename = output_dir + filename
-            averaged, _ = average_results(current_path + '/' + filename)
-            averaged.to_csv(base_filename + '_av.csv', sep=';', index=False, header=None)
+            aggregated = average_results(current_path + '/' + filename)
+            aggregated.to_csv(base_filename + '_agg.csv', sep=';', index=False, header=None)
                 
-            plot_results(averaged, dir, base_filename)
+            plot_results(aggregated, dir, base_filename)
 
 
 process_sims()

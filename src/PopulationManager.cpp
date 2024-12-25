@@ -7,7 +7,6 @@
 #include <set>
 #include <unordered_set>
 #include <functional>
-#include <optional>
 
 #include "cross_operators/OXOperator.hpp"
 #include "cross_operators/PMXOperator.hpp"
@@ -20,7 +19,7 @@
 PopulationManager::PopulationManager(const Settings &settings, Loader &loader)
 	: settings(settings),
 	  cross_pop_count(settings.pop_size * settings.cross_prob),
-	  mut_pop_count(settings.pop_size * settings.cross_prob),
+	  mut_pop_count(settings.pop_size * settings.mut_prob),
 	  chromosome_size(loader.get_locations()->size()),
 	  rand_gen(rand_dev()),
 	  population(settings.pop_size, settings.elite_sz, settings.init_t, loader, rand_gen),

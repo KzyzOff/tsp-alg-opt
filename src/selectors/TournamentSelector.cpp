@@ -28,6 +28,7 @@ std::vector<Individual> TournamentSelector::select_n(const unsigned int n) {
 		while ( round_selected.size() < settings.tour_sz ) {
 			int rand_idx = distribution(rand_gen);
 			auto rand_individual = *std::next(pop_left.begin(), rand_idx);
+			assert(("[Tournament selector] Zero-value fitness!", rand_individual.first != 0.f));
 			round_selected.insert(rand_individual);
 		}
 

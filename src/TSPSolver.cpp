@@ -18,7 +18,7 @@ Individual TSPSolver::solve(const uint64_t max_fitness_update_count, int run_id)
 
 	int gen_number = 1;
 	uint64_t current_fitness_update_count = 0;
-	while ( current_fitness_update_count < max_fitness_update_count && gen_number <= settings.gen_count ) {
+	while ( current_fitness_update_count < max_fitness_update_count ) {
 		pmgr.advance_population();
 		stats = pmgr.calc_fitness_stats();
 		log_stats_to_file(stats, gen_number);

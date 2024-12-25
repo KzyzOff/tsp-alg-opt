@@ -28,10 +28,10 @@ std::string vec2str(const std::vector<int>& vec, const std::string& separator = 
 	return result.str();
 }
 
-tsp_t::Individual mt_run(const Settings settings, int id) {
+tsp_t::Individual mt_run(const Settings settings, int max_fitness_update_count, int id) {
 	TSPSolver s(settings);
-	tsp_t::Individual best = s.solve(std::pow(10, 3), id);
-	printf("Simulation %i has been completed.\n", id);
+	tsp_t::Individual best = s.solve(max_fitness_update_count, id);
+	// printf("Simulation %i has been completed.\n", id);
 
 	return best;
 }

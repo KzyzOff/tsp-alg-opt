@@ -87,7 +87,7 @@ void Population::random_init(unsigned int pop_size) {
 		std::ranges::shuffle(chromosome, rand_gen);
 		float fitness = calc_fitness(chromosome);
 
-		assert(("[random_init] Empty chromosome or 0.f fitness value!", !chromosome.size() != pop_size || fitness == 0.f));
+		assert(("[random_init] Empty chromosome or 0.f fitness value!", !chromosome.empty() || fitness != 0.f));
 		population.insert({fitness, {chromosome, false}});
 	}
 
