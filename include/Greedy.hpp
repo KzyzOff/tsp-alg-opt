@@ -10,8 +10,9 @@
 
 class Greedy {
 public:
-	Greedy(std::shared_ptr<const std::vector<Location>> locations, std::shared_ptr<Graph> lookup_graph);
+	Greedy(std::shared_ptr<const std::vector<Location>> locations, const Graph& lookup_graph);
 
+	Individual get_solution(int start_location_id);
 	Individual get_best_solution();
 
 	static void calc_solution_with_initial_chromosome(Individual &initial_individual, Loader &data_loader,
@@ -22,5 +23,5 @@ public:
 
 private:
 	std::shared_ptr<const std::vector<Location>> locations;
-	std::shared_ptr<Graph> lookup_graph;
+	Graph lookup_graph;
 };

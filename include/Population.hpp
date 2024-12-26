@@ -34,6 +34,4 @@ private:
 	uint64_t fitness_update_count;
 
 	void random_init(unsigned int pop_size);
-
-	// void greedy_init(unsigned int pop_size);
 };

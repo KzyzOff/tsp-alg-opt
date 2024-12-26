@@ -80,3 +80,5 @@ fabric.properties
 /external/
 /simulation_results/
 /plotter/venv/
+/plotter/*.txt
+/.idea/*

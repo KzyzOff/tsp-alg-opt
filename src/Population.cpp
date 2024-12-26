@@ -93,25 +93,3 @@ void Population::random_init(unsigned int pop_size) {
 
 	update_elite();
 }
-
-/**
- * @brief Greedy init of the population; two-city random start
- */
-// void Population::greedy_init(unsigned int pop_size) {
-// 	population.clear();
-// 	population.resize(pop_size);
-// 	std::uniform_int_distribution<> distr(0, locations->size() - 1);
-//
-// 	for ( auto& individual : population ) {
-// 		int first_idx = distr(rand_gen);
-// 		int second_idx = distr(rand_gen);
-// 		while ( first_idx == second_idx )
-// 			second_idx = distr(rand_gen);
-// 		individual = std::make_shared<Individual>();
-// 		individual->chromosome.resize(locations->size());
-// 		individual->chromosome.at(0) = locations->at(0).n;
-// 		individual->chromosome.at(1) = locations->at(0).n;
-//
-// 		Greedy::calc_solution_with_initial_chromosome(*individual, loader, 2);
-// 	}
-// }

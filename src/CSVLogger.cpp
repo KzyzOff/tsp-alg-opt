@@ -10,7 +10,7 @@ CSVLogger::CSVLogger()
 	  flush_counter(0) {}
 
 CSVLogger::CSVLogger(const std::filesystem::path &filename, int n_columns)
-	: filepath(SIMULATION_RESULTS_PATH / filepath),
+	: filepath(SIMULATION_RESULTS_PATH / filename),
 	  n_columns(n_columns),
 	  flush_counter(0)
 {

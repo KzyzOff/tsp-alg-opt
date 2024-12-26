@@ -24,7 +24,7 @@ set(
         ${SOURCES_DIR}/cross_operators/OXOperator.cpp
         ${SOURCES_DIR}/cross_operators/PMXOperator.cpp
         ${SOURCES_DIR}/Graph.cpp
-#        ${SOURCES_DIR}/Greedy.cpp
+        ${SOURCES_DIR}/Greedy.cpp
         ${SOURCES_DIR}/Loader.cpp
         ${SOURCES_DIR}/PopulationManager.cpp
 )
@@ -44,7 +44,7 @@ set(
         ${HEADERS_DIR}/cross_operators/OXOperator.hpp
         ${HEADERS_DIR}/cross_operators/PMXOperator.hpp
         ${HEADERS_DIR}/Graph.hpp
-#        ${HEADERS_DIR}/Greedy.hpp
+        ${HEADERS_DIR}/Greedy.hpp
         ${HEADERS_DIR}/Loader.hpp
         ${HEADERS_DIR}/PopulationManager.hpp
 )

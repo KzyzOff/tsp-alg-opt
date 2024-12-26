@@ -14,3 +14,7 @@ tsp_t::Individual mt_run(tsp_t::Settings settings, int max_fitness_update_count,
 std::string stringify_settings(const tsp_t::Settings& settings);
 
 void json_add_best(const std::filesystem::path& filepath, const std::string& settings_str, const tsp_t::Individual& best);
+
+void greedy_sim(const std::filesystem::path& dataset_path);
+
+void random_sim(const std::filesystem::path& dataset_path);
